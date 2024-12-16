@@ -208,23 +208,23 @@ def update_intern_status(id):
 def create_evaluation():
     """创建实习评估"""
     try:
-        # 开始事务
-        with db.session.begin_nested():
-            data = request.get_json()
-            
-            # 验证必填字段
-            required_fields = [
-                'intern_status_id', 'evaluation_date', 'evaluation_type',
-                'work_performance', 'learning_ability', 'communication_skill',
-                'professional_skill', 'attendance', 'evaluator_id'
-            ]
-            for field in required_fields:
-                if field not in data:
-                    return jsonify({
-                        'code': 400,
-                        'msg': f'缺少必填字段: {field}'
-                    })
-                    
+        data = request.get_json()
+        
+        # 验证必填字段
+        required_fields = [
+            'intern_status_id', 'evaluation_date', 'evaluation_type',
+            'work_performance', 'learning_ability', 'communication_skill',
+            'professional_skill', 'attendance', 'evaluator_id'
+        ]
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'code': 400,
+                    'msg': f'缺少必填字段: {field}'
+                })
+        
+        # 开始数据库事务
+        with db.session.begin():
             # 检查实习状态是否存在
             status = InternStatus.query.get(data['intern_status_id'])
             if not status:
@@ -278,10 +278,9 @@ def create_evaluation():
             )
             
             db.session.add(evaluation)
-            db.session.flush()  # 确保评估记录被保存
             
             # 如果是转正评估，且推荐转正
-            if data['evaluation_type'] == 'final' and data.get('conversion_recommended'):
+            if data['evaluation_type'] == 'final' and data.get('conversion_recommended', False):
                 evaluation_date = datetime.strptime(data['evaluation_date'], '%Y-%m-%d').date()
                 
                 # 根据当前状态确定下一个状态
@@ -315,18 +314,12 @@ def create_evaluation():
                         db.session.add(position_change)
                     
                     # 更新员工信息
-                    updated_employee, error = EmployeeService.update_employee(employee.id, employee_data)
-                    if error:
-                        # 如果更新失败，回滚事务并返回错误
-                        db.session.rollback()
-                        return jsonify({
-                            'code': 500,
-                            'msg': f'更新员工信息失败: {error}'
-                        })
+                    employee.employee_type = next_status
+                    if data.get('recommended_position_id'):
+                        employee.position_id = data['recommended_position_id']
+                    employee.updated_at = datetime.utcnow()
             
-            # 提交所有更改
-            db.session.commit()
-            
+            # 事务会自动提交或回滚
             return jsonify({
                 'code': 200,
                 'data': evaluation.to_dict(),
@@ -334,8 +327,9 @@ def create_evaluation():
             })
             
     except Exception as e:
-        db.session.rollback()
+        # 记录错误日志
         current_app.logger.error(f"创建实习评估失败: {str(e)}")
+        # 返回错误信息
         return jsonify({
             'code': 500,
             'msg': f'创建实习评估失败: {str(e)}'

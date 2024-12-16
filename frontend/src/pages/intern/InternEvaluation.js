@@ -60,17 +60,26 @@ const InternEvaluation = () => {
     try {
       // 从localStorage获取当前用户ID
       const currentUser = JSON.parse(localStorage.getItem('user'));
+      
+      // 准备评估数据
       const data = {
         ...values,
         intern_status_id: id,
         evaluation_date: values.evaluation_date.format('YYYY-MM-DD'),
-        evaluator_id: currentUser.id  // 添加评估人ID
+        evaluator_id: currentUser.id,  // 添加评估人ID
+        // 如果是转正评估，设置conversion_recommended为true
+        conversion_recommended: values.evaluation_type === 'final',
+        // 如果有转正建议，添加到conversion_comments
+        conversion_comments: values.conversion_suggestion
       };
+
       const res = await createInternEvaluation(data);
       if (res.code === 200) {
         message.success('提交评估成功');
         form.resetFields();
+        // 刷新评估列表和实习状态
         fetchEvaluations();
+        fetchInternStatus();
       }
     } catch (error) {
       message.error('提交评估失败');

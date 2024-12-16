@@ -85,65 +85,67 @@ class EmployeeService:
         """
         更新员工信息
         :param employee_id: 员工ID
-        :param data: 更新的信息字典
+        :param data: 更新的数据
         :return: 更新后的员工对象或None
         """
         try:
-            # 使用 with 语句确保事务的完整性
-            with db.session.begin_nested():
-                employee = Employee.query.options(
-                    db.joinedload(Employee.department),
-                    db.joinedload(Employee.position)
-                ).get(employee_id)
-                
-                if not employee:
-                    return None, "员工不存在"
-
-                # 更新可修改的字段
-                update_fields = [
-                    'name', 'gender', 'birth_date', 'id_card', 'phone', 
-                    'email', 'address', 'department_id', 'position_id', 
-                    'employment_status', 'hire_date', 'employee_type'
-                ]
-                
-                # 记录更新前的状态
-                old_employee_type = employee.employee_type
-                old_position_id = employee.position_id
-                
-                for field in update_fields:
-                    if field in data:
-                        if field in ['birth_date', 'hire_date'] and data[field]:  
-                            setattr(employee, field, datetime.strptime(data[field], '%Y-%m-%d').date())
-                        elif field == 'employment_status':
-                            # 确保状态字段是有效值
-                            if data[field] in ['active', 'resigned', 'suspended']:
-                                setattr(employee, field, data[field])
-                            else:
-                                return None, f"无效的雇佣状态: {data[field]}"
-                        elif field == 'employee_type':  # 添加employee_type的处理
-                            # 确保employee_type字段是有效值
-                            if data[field] in ['intern', 'probation', 'regular']:
-                                # 检查状态转换是否合法
-                                if not EmployeeService._is_valid_status_transition(old_employee_type, data[field]):
-                                    return None, f"无效的员工类型转换: 从 {old_employee_type} 到 {data[field]}"
-                                setattr(employee, field, data[field])
-                            else:
-                                return None, f"无效的员工类型: {data[field]}"        
-                        else:
-                            setattr(employee, field, data[field])
-                
-                employee.updated_at = datetime.utcnow()
-                
-                # 提交更改
-                db.session.flush()
-                
-                # 返回更新后的员工对象
-                return employee, None
-                
-        except Exception as e:
-            print(f"更新员工错误: {str(e)}")
-            raise  # 向上层抛出异常，由调用方处理回滚
+            # 查询员工信息，预加载关联数据以提高性能
+            employee = Employee.query.options(
+                db.joinedload(Employee.department),
+                db.joinedload(Employee.position)
+            ).get(employee_id)
             
+            if not employee:
+                return None, "员工不存在"
+
+            # 定义可更新的字段列表
+            update_fields = [
+                'name', 'gender', 'birth_date', 'id_card', 'phone', 
+                'email', 'address', 'department_id', 'position_id', 
+                'employment_status', 'hire_date', 'employee_type'
+            ]
+            
+            # 记录更新前的状态，用于后续的状态转换验证
+            old_employee_type = employee.employee_type
+            old_position_id = employee.position_id
+            
+            # 遍历更新字段
+            for field in update_fields:
+                if field in data:
+                    # 处理日期类型字段
+                    if field in ['birth_date', 'hire_date'] and data[field]:  
+                        setattr(employee, field, datetime.strptime(data[field], '%Y-%m-%d').date())
+                    # 处理雇佣状态字段
+                    elif field == 'employment_status':
+                        if data[field] in ['active', 'resigned', 'suspended']:
+                            setattr(employee, field, data[field])
+                        else:
+                            return None, f"无效的雇佣状态: {data[field]}"
+                    # 处理员工类型字段
+                    elif field == 'employee_type':
+                        if data[field] in ['intern', 'probation', 'regular']:
+                            # 验证状态转换的合法性
+                            if not EmployeeService._is_valid_status_transition(old_employee_type, data[field]):
+                                return None, f"无效的员工类型转换: 从 {old_employee_type} 到 {data[field]}"
+                            setattr(employee, field, data[field])
+                        else:
+                            return None, f"无效的员工类型: {data[field]}"
+                    # 处理其他字段
+                    else:
+                        setattr(employee, field, data[field])
+            
+            # 更新最后修改时间
+            employee.updated_at = datetime.utcnow()
+            
+            # 返回更新后的员工对象，由调用方决定是否提交事务
+            return employee, None
+            
+        except Exception as e:
+            # 记录错误日志
+            print(f"更新员工错误: {str(e)}")
+            # 返回错误信息，由调用方决定是否回滚事务
+            return None, str(e)
+
     @staticmethod
     def _is_valid_status_transition(old_status, new_status):
         """

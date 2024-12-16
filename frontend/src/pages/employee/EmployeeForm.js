@@ -197,6 +197,7 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
         resignation_date: values.resignation_date ? dayjs(values.resignation_date).format('YYYY-MM-DD') : null,
         department_id: values.department_id ? parseInt(values.department_id) : null,
         position_id: values.position_id ? parseInt(values.position_id) : null,
+        employee_type: values.employee_type || 'regular',  
         photo_url: values.photo_url || null  
       };
 
@@ -384,7 +385,8 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
       onFinish={handleSubmit}
       initialValues={{
         employment_status: 'active',
-        gender: 'male'
+        gender: 'male',
+        employee_type: 'regular'  
       }}
       preserve={false}
     >
@@ -518,7 +520,7 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
               label="员工类型"
               rules={[{ required: true, message: '请选择员工类型' }]}
             >
-              <Select onChange={handleEmployeeTypeChange}>
+              <Select>
                 <Option value="intern">实习生</Option>
                 <Option value="probation">试用期</Option>
                 <Option value="regular">正式员工</Option>
@@ -533,7 +535,7 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
             >
               <Select>
                 {departments.map(dept => (
-                  <Option key={dept.id} value={dept.id}>{dept.name}</Option>
+                  <Option key={dept.id} value={dept.id.toString()}>{dept.name}</Option>
                 ))}
               </Select>
             </Form.Item>
@@ -549,7 +551,7 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
             >
               <Select>
                 {positions.map(pos => (
-                  <Option key={pos.id} value={pos.id}>{pos.name}</Option>
+                  <Option key={pos.id} value={pos.id.toString()}>{pos.name}</Option>
                 ))}
               </Select>
             </Form.Item>

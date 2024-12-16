@@ -329,14 +329,18 @@ const InternList = () => {
 
       {/* 编辑/创建模态框 */}
       <Modal
-        title={currentRecord ? '编辑实习记录' : '新建实习记录'}
-        visible={modalVisible}
+        title={currentRecord ? '编辑实习信息' : '新增实习信息'}
+        open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => {
           setModalVisible(false);
           form.resetFields();
+          setCurrentRecord(null);
         }}
-        width={800}
+        style={{
+          body: { padding: '24px' }
+        }}
+        destroyOnClose
       >
         <Form
           form={form}

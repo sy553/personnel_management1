@@ -90,6 +90,7 @@ def create_app(config_name=None):
     from .api.salary import bp as salary_bp
     from .api.attendance import bp as attendance_bp
     from .api.user import bp as user_bp  # 导入新的用户蓝图
+    from .api.intern import bp as intern_bp  # 导入实习管理蓝图
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(employee_bp)
@@ -99,6 +100,7 @@ def create_app(config_name=None):
     app.register_blueprint(salary_bp)
     app.register_blueprint(attendance_bp)
     app.register_blueprint(user_bp)  # 注册用户蓝图
+    app.register_blueprint(intern_bp)  # 注册实习管理蓝图
     
     # 配置日志
     if not app.debug and not app.testing:

@@ -7,7 +7,7 @@ import request from '../utils/request';
  */
 export async function getInternStatusList(params) {
   return request({
-    url: '/api/intern/list',
+    url: '/api/intern/status',
     method: 'GET',
     params,
   });
@@ -32,7 +32,7 @@ export async function getInternStatus(id) {
  */
 export async function createInternStatus(data) {
   return request({
-    url: '/api/intern/status',
+    url: '/api/intern/list',
     method: 'POST',
     data,
   });

@@ -134,6 +134,7 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
           resignation_date: employee.resignation_date ? dayjs(employee.resignation_date) : null,
           department_id: employee.department_id?.toString(),
           position_id: employee.position_id?.toString(),
+          employee_type: employee.employee_type || 'regular',  
         };
 
         if (mainForm) {
@@ -198,7 +199,6 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
         department_id: values.department_id ? parseInt(values.department_id) : null,
         position_id: values.position_id ? parseInt(values.position_id) : null,
         employee_type: values.employee_type || 'regular',  
-        photo_url: values.photo_url || null  
       };
 
       console.log('提交的表单数据:', formData);
@@ -207,7 +207,8 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
         const response = await updateEmployee(employee.id, formData);
         if (response.code === 200) {
           message.success('员工信息更新成功');
-          if (employee.employment_status !== formData.employment_status) {
+          if (employee.employment_status !== formData.employment_status || 
+              employee.employee_type !== formData.employee_type) {  
             onSuccess(true); 
           } else {
             onSuccess(false); 

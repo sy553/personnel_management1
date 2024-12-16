@@ -3,7 +3,7 @@
 """
 
 from flask import Blueprint, request, jsonify, current_app
-from app.models.employee import Employee
+from app.models.employee import Employee, PositionChangeHistory
 from app.models.intern_status import InternStatus, InternEvaluation
 from app.models.department import Department
 from app.models.position import Position
@@ -11,6 +11,7 @@ from app import db
 from datetime import datetime
 from sqlalchemy import and_, or_
 from flask_jwt_extended import jwt_required
+from app.services.employee_service import EmployeeService
 
 bp = Blueprint('intern', __name__, url_prefix='/api/intern')
 
@@ -95,7 +96,7 @@ def get_intern_status(id):
             'msg': f'获取实习状态失败: {str(e)}'
         })
 
-@bp.route('/status', methods=['POST'])
+@bp.route('/list', methods=['POST'])
 @jwt_required()
 def create_intern_status():
     """创建实习状态记录"""
@@ -144,6 +145,10 @@ def create_intern_status():
             position_id=data['position_id'],
             comments=data.get('comments')
         )
+        
+        # 更新员工类型为实习生
+        employee.employee_type = 'intern'
+        employee.employment_status = 'active'  # 确保员工状态为在职
         
         db.session.add(status)
         db.session.commit()
@@ -203,76 +208,131 @@ def update_intern_status(id):
 def create_evaluation():
     """创建实习评估"""
     try:
-        data = request.get_json()
-        
-        # 验证必填字段
-        required_fields = [
-            'intern_status_id', 'evaluation_date', 'evaluation_type',
-            'work_performance', 'learning_ability', 'communication_skill',
-            'professional_skill', 'attendance', 'evaluator_id'
-        ]
-        for field in required_fields:
-            if field not in data:
+        # 开始事务
+        with db.session.begin_nested():
+            data = request.get_json()
+            
+            # 验证必填字段
+            required_fields = [
+                'intern_status_id', 'evaluation_date', 'evaluation_type',
+                'work_performance', 'learning_ability', 'communication_skill',
+                'professional_skill', 'attendance', 'evaluator_id'
+            ]
+            for field in required_fields:
+                if field not in data:
+                    return jsonify({
+                        'code': 400,
+                        'msg': f'缺少必填字段: {field}'
+                    })
+                    
+            # 检查实习状态是否存在
+            status = InternStatus.query.get(data['intern_status_id'])
+            if not status:
                 return jsonify({
-                    'code': 400,
-                    'msg': f'缺少必填字段: {field}'
+                    'code': 404,
+                    'msg': '实习状态记录不存在'
                 })
                 
-        # 检查实习状态是否存在
-        status = InternStatus.query.get(data['intern_status_id'])
-        if not status:
+            # 获取员工信息（用于后续状态检查）
+            employee = Employee.query.get(status.employee_id)
+            if not employee:
+                return jsonify({
+                    'code': 404,
+                    'msg': '员工不存在'
+                })
+                
+            # 验证员工当前状态是否正确
+            if employee.employee_type != status.status:
+                return jsonify({
+                    'code': 400,
+                    'msg': f'员工状态不匹配：系统状态为{employee.employee_type}，实习状态为{status.status}'
+                })
+                
+            # 计算总分
+            total_score = sum([
+                data['work_performance'],
+                data['learning_ability'],
+                data['communication_skill'],
+                data['professional_skill'],
+                data['attendance']
+            ])
+            
+            # 创建评估记录
+            evaluation = InternEvaluation(
+                intern_status_id=data['intern_status_id'],
+                evaluation_date=datetime.strptime(data['evaluation_date'], '%Y-%m-%d').date(),
+                evaluation_type=data['evaluation_type'],
+                work_performance=data['work_performance'],
+                learning_ability=data['learning_ability'],
+                communication_skill=data['communication_skill'],
+                professional_skill=data['professional_skill'],
+                attendance=data['attendance'],
+                total_score=total_score,
+                evaluation_content=data.get('evaluation_content'),
+                improvement_suggestions=data.get('improvement_suggestions'),
+                conversion_recommended=data.get('conversion_recommended', False),
+                recommended_position_id=data.get('recommended_position_id'),
+                recommended_salary=data.get('recommended_salary'),
+                conversion_comments=data.get('conversion_comments'),
+                evaluator_id=data['evaluator_id']
+            )
+            
+            db.session.add(evaluation)
+            db.session.flush()  # 确保评估记录被保存
+            
+            # 如果是转正评估，且推荐转正
+            if data['evaluation_type'] == 'final' and data.get('conversion_recommended'):
+                evaluation_date = datetime.strptime(data['evaluation_date'], '%Y-%m-%d').date()
+                
+                # 根据当前状态确定下一个状态
+                next_status = {
+                    'intern': 'probation',
+                    'probation': 'regular'
+                }.get(status.status)
+                
+                if next_status:
+                    # 更新实习状态
+                    status.status = next_status
+                    status.actual_end_date = evaluation_date
+                    
+                    # 准备更新员工信息
+                    employee_data = {
+                        'employee_type': next_status,
+                        'position_id': data.get('recommended_position_id', employee.position_id)
+                    }
+                    
+                    # 如果职位发生变化，记录职位变更历史
+                    if data.get('recommended_position_id') and data['recommended_position_id'] != employee.position_id:
+                        position_change = PositionChangeHistory(
+                            employee_id=employee.id,
+                            old_department_id=employee.department_id,
+                            new_department_id=employee.department_id,  # 部门保持不变
+                            old_position_id=employee.position_id,
+                            new_position_id=data['recommended_position_id'],
+                            change_date=evaluation_date,
+                            change_reason=f'{status.status}转{next_status}职位调整 - {data.get("conversion_comments", "无")}'
+                        )
+                        db.session.add(position_change)
+                    
+                    # 更新员工信息
+                    updated_employee, error = EmployeeService.update_employee(employee.id, employee_data)
+                    if error:
+                        # 如果更新失败，回滚事务并返回错误
+                        db.session.rollback()
+                        return jsonify({
+                            'code': 500,
+                            'msg': f'更新员工信息失败: {error}'
+                        })
+            
+            # 提交所有更改
+            db.session.commit()
+            
             return jsonify({
-                'code': 404,
-                'msg': '实习状态记录不存在'
+                'code': 200,
+                'data': evaluation.to_dict(),
+                'msg': '创建实习评估成功'
             })
             
-        # 计算总分
-        total_score = sum([
-            data['work_performance'],
-            data['learning_ability'],
-            data['communication_skill'],
-            data['professional_skill'],
-            data['attendance']
-        ])
-        
-        # 创建评估记录
-        evaluation = InternEvaluation(
-            intern_status_id=data['intern_status_id'],
-            evaluation_date=datetime.strptime(data['evaluation_date'], '%Y-%m-%d').date(),
-            evaluation_type=data['evaluation_type'],
-            work_performance=data['work_performance'],
-            learning_ability=data['learning_ability'],
-            communication_skill=data['communication_skill'],
-            professional_skill=data['professional_skill'],
-            attendance=data['attendance'],
-            total_score=total_score,
-            evaluation_content=data.get('evaluation_content'),
-            improvement_suggestions=data.get('improvement_suggestions'),
-            conversion_recommended=data.get('conversion_recommended', False),
-            recommended_position_id=data.get('recommended_position_id'),
-            recommended_salary=data.get('recommended_salary'),
-            conversion_comments=data.get('conversion_comments'),
-            evaluator_id=data['evaluator_id']
-        )
-        
-        db.session.add(evaluation)
-        
-        # 如果是转正评估，且推荐转正，更新实习状态
-        if data['evaluation_type'] == 'final' and data.get('conversion_recommended'):
-            status.status = 'probation'  # 更新为试用期
-            status.actual_end_date = datetime.strptime(data['evaluation_date'], '%Y-%m-%d').date()
-            
-            if data.get('recommended_position_id'):
-                status.position_id = data['recommended_position_id']
-        
-        db.session.commit()
-        
-        return jsonify({
-            'code': 200,
-            'data': evaluation.to_dict(),
-            'msg': '创建实习评估成功'
-        })
-        
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"创建实习评估失败: {str(e)}")

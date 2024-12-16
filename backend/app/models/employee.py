@@ -23,6 +23,7 @@ class Employee(db.Model):
     department_id = db.Column(db.Integer, ForeignKey('departments.id', name='fk_employee_department'))
     position_id = db.Column(db.Integer, ForeignKey('positions.id', name='fk_employee_position'))
     employment_status = db.Column(db.String(20), default='active', nullable=False)
+    employee_type = db.Column(db.String(20), default='regular', nullable=False)  # 添加员工类型字段：实习生(intern)、试用期(probation)、正式(regular)
     photo_url = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -40,6 +41,8 @@ class Employee(db.Model):
         super(Employee, self).__init__(**kwargs)
         if self.employment_status is None:
             self.employment_status = 'active'
+        if self.employee_type is None:  # 添加员工类型默认值设置
+            self.employee_type = 'regular'
 
     def to_dict(self):
         """转换为字典"""
@@ -60,6 +63,7 @@ class Employee(db.Model):
             'department': self.department.name if self.department else None,
             'position_id': self.position_id,  # 添加职位ID
             'position': self.position.name if self.position else None,
+            'employee_type': self.employee_type,  # 添加员工类型到返回字典
             'employment_status': self.employment_status,
             'photo_url': self.photo_url,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),

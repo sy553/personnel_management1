@@ -58,10 +58,13 @@ const InternEvaluation = () => {
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
+      // 从localStorage获取当前用户ID
+      const currentUser = JSON.parse(localStorage.getItem('user'));
       const data = {
         ...values,
         intern_status_id: id,
         evaluation_date: values.evaluation_date.format('YYYY-MM-DD'),
+        evaluator_id: currentUser.id  // 添加评估人ID
       };
       const res = await createInternEvaluation(data);
       if (res.code === 200) {

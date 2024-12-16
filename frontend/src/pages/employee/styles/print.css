@@ -1,0 +1,121 @@
+/* 打印样式 */
+@media print {
+  /* 隐藏不需要打印的元素 */
+  .ant-btn,
+  .ant-tabs-nav,
+  .ant-modal-close,
+  .ant-upload,
+  .ant-message,
+  .ant-dropdown {
+    display: none !important;
+  }
+
+  /* 调整页面布局 */
+  .employee-detail {
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* 标题样式 */
+  .archive-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .archive-header h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+    padding: 0 0 16px;
+    border-bottom: 2px solid #000;
+  }
+
+  /* 基本信息表格样式 */
+  .ant-descriptions {
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  .ant-descriptions-item-label {
+    font-weight: bold;
+    padding: 8px;
+    background: #f5f5f5;
+    border: 1px solid #d9d9d9;
+  }
+
+  .ant-descriptions-item-content {
+    padding: 8px;
+    border: 1px solid #d9d9d9;
+  }
+
+  /* 照片样式 */
+  .photo-upload {
+    width: 128px;
+    height: 128px;
+    margin: 0 auto 16px;
+  }
+
+  .photo-upload img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  /* 历史记录样式 */
+  .history-list {
+    margin-top: 24px;
+  }
+
+  .history-item {
+    page-break-inside: avoid;
+    border: 1px solid #d9d9d9;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .history-item-title {
+    font-weight: bold;
+  }
+
+  .history-item-date {
+    color: #666;
+  }
+
+  /* 表格样式 */
+  .ant-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .ant-table th,
+  .ant-table td {
+    padding: 8px;
+    border: 1px solid #d9d9d9;
+    text-align: left;
+  }
+
+  .ant-table th {
+    background: #f5f5f5;
+    font-weight: bold;
+  }
+
+  /* 分页设置 */
+  @page {
+    margin: 2cm;
+  }
+
+  /* 避免内容被切断 */
+  .ant-card,
+  .ant-descriptions,
+  .history-item {
+    page-break-inside: avoid;
+  }
+}

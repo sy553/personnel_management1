@@ -1,0 +1,163 @@
+.dashboard {
+  padding: var(--spacing-lg);
+}
+
+/* 统计卡片样式 */
+.stat-card {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover-color) 100%);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--box-shadow-card);
+}
+
+.stat-card .ant-statistic-title {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 16px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.stat-card .ant-statistic-content {
+  color: white;
+}
+
+.stat-card .anticon {
+  font-size: 24px;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* 图表卡片样式 */
+.chart-card {
+  background: var(--bg-container);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--box-shadow-base);
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-card);
+}
+
+.chart-card .ant-card-head {
+  border-bottom: 1px solid var(--border-color-split);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.chart-card .ant-card-head-title {
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.chart-card .ant-card-body {
+  padding: var(--spacing-lg);
+}
+
+/* 部门分布列表 */
+.department-list .ant-list-item {
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--border-color-split);
+}
+
+.department-list .ant-progress {
+  margin-top: var(--spacing-xs);
+}
+
+.department-list .ant-list-item-meta-title {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* 最近员工表格 */
+.recent-employees .ant-table {
+  background: transparent;
+}
+
+.recent-employees .ant-table-thead > tr > th {
+  background: var(--bg-layout);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.recent-employees .ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border-color-split);
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .dashboard {
+    padding: var(--spacing-md);
+  }
+  
+  .stat-card {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .chart-card {
+    margin-bottom: var(--spacing-md);
+  }
+}
+
+/* 加载状态样式 */
+.ant-spin-nested-loading {
+  height: 100%;
+}
+
+/* 空状态样式 */
+.ant-empty {
+  margin: 32px 0;
+}
+
+/* 表格hover效果 */
+.ant-table-tbody > tr:hover > td {
+  background-color: #f5f5f5;
+}
+
+.ant-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
+}
+
+.ant-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.ant-statistic-title {
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.ant-statistic-content {
+  font-size: 24px;
+  color: #1890ff;
+}
+
+.ant-table {
+  background: #fff;
+}
+
+.ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 500;
+}
+
+.ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 24px;
+  min-height: 48px;
+}
+
+.ant-card-head-title {
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.85);
+  font-weight: 500;
+}
+
+.ant-card-body {
+  padding: 24px;
+}

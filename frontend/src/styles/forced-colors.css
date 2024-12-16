@@ -1,0 +1,40 @@
+/* 强制颜色模式样式 */
+@media (forced-colors: active) {
+  /* 按钮样式 */
+  .ant-btn {
+    forced-color-adjust: none;
+    background-color: ButtonFace;
+    color: ButtonText;
+    border-color: ButtonBorder;
+  }
+
+  .ant-btn:hover {
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  /* 链接样式 */
+  a {
+    forced-color-adjust: none;
+    color: LinkText;
+  }
+
+  a:hover {
+    color: Highlight;
+  }
+
+  /* 输入框样式 */
+  .ant-input {
+    forced-color-adjust: none;
+    background-color: Field;
+    color: FieldText;
+    border-color: FieldText;
+  }
+
+  /* 卡片样式 */
+  .ant-card {
+    forced-color-adjust: none;
+    background-color: Canvas;
+    border-color: CanvasText;
+  }
+}

@@ -1,0 +1,122 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.login-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+}
+
+.login-card .ant-card-head {
+  border-bottom: none;
+  padding: 24px 24px 0;
+}
+
+.login-card .ant-card-head-title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1890ff;
+  padding: 12px 0;
+  letter-spacing: 1px;
+}
+
+.login-card .ant-card-body {
+  padding: 24px 32px 32px;
+}
+
+.login-card .ant-form-item {
+  margin-bottom: 24px;
+}
+
+.login-card .ant-input-affix-wrapper {
+  padding: 8px 11px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s;
+}
+
+.login-card .ant-input-affix-wrapper:hover,
+.login-card .ant-input-affix-wrapper:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.login-card .ant-btn {
+  height: 40px;
+  font-size: 16px;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.login-card .ant-btn-primary {
+  background: linear-gradient(90deg, #1890ff 0%, #36cfc9 100%);
+  border: none;
+}
+
+.login-card .ant-btn-primary:hover {
+  background: linear-gradient(90deg, #40a9ff 0%, #5cdbd3 100%);
+  transform: translateY(-1px);
+}
+
+.login-card .ant-btn-link {
+  font-size: 14px;
+  padding: 4px 0;
+  height: auto;
+  transition: all 0.3s;
+}
+
+.login-card .ant-btn-link:hover {
+  color: #36cfc9;
+  transform: translateY(-1px);
+}
+
+/* 响应式设计优化 */
+@media (max-width: 576px) {
+  .login-container {
+    padding: 16px;
+    background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
+  }
+
+  .login-card {
+    margin: 0;
+    max-width: none;
+    border-radius: 12px;
+  }
+
+  .login-card .ant-card-head-title {
+    font-size: 24px;
+  }
+
+  .login-card .ant-card-body {
+    padding: 20px 24px 24px;
+  }
+}
+
+/* 添加加载动画 */
+.login-card .ant-btn-loading {
+  opacity: 0.8;
+}
+
+/* 错误提示样式优化 */
+.ant-message .ant-message-notice-content {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 12px 20px;
+}

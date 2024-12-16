@@ -1,0 +1,59 @@
+/* 全局样式 */
+.app-container {
+  min-height: 100vh;
+}
+
+/* 布局样式 */
+.site-layout {
+  padding: 0 50px;
+}
+
+.site-layout-background {
+  background: #fff;
+  padding: 24px;
+  min-height: 360px;
+}
+
+/* 页面标题 */
+.page-header {
+  margin: 16px 0;
+}
+
+/* 表单样式 */
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: 4px;
+}
+
+/* 表格样式 */
+.table-operations {
+  margin-bottom: 16px;
+}
+
+.table-operations > button {
+  margin-right: 8px;
+}
+
+/* 搜索表单 */
+.search-form {
+  margin-bottom: 24px;
+}
+
+/* 卡片样式 */
+.dashboard-card {
+  margin-bottom: 24px;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .site-layout {
+    padding: 0 20px;
+  }
+  
+  .form-container {
+    padding: 16px;
+  }
+}

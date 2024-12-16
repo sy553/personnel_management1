@@ -1,0 +1,28 @@
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  padding: 20px;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.register-title {
+  text-align: center;
+  color: #1890ff;
+  margin-bottom: 24px !important;
+}
+
+.ant-divider {
+  margin: 24px 0;
+}
+
+.ant-form-item-explain-error {
+  font-size: 12px;
+}

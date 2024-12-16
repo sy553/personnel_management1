@@ -1,0 +1,215 @@
+/* 员工列表页面样式 */
+.employee-container {
+  padding: 24px;
+}
+
+/* 页面标题样式 */
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 统计卡片样式 */
+.employee-stats {
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+/* 搜索区域样式 */
+.search-area {
+  margin-bottom: 24px;
+  background: #fff;
+  padding: 24px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.search-form {
+  width: 100%;
+}
+
+/* 操作按钮区样式 */
+.action-area {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 员工表格样式 */
+.employee-table {
+  background: #fff;
+  padding: 24px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.employee-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+/* 状态标签样式 */
+.status-tag {
+  border-radius: 4px;
+  padding: 0 8px;
+}
+
+.status-tag.active {
+  background-color: #f6ffed;
+  border-color: #b7eb8f;
+  color: #52c41a;
+}
+
+.status-tag.suspended {
+  background-color: #fff7e6;
+  border-color: #ffd591;
+  color: #fa8c16;
+}
+
+.status-tag.resigned {
+  background-color: #fff1f0;
+  border-color: #ffa39e;
+  color: #f5222d;
+}
+
+/* 操作按钮样式 */
+.operation-button {
+  padding: 4px 0;
+}
+
+/* 员工列表页面样式优化 */
+.employee-list {
+  padding: 24px;
+}
+
+/* 统计卡片样式 */
+.stats-row {
+  margin-bottom: 24px;
+}
+
+.stats-row .ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+}
+
+.stats-row .ant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.stats-row .ant-statistic-title {
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 8px;
+}
+
+.stats-row .ant-statistic-content {
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.stats-row .ant-statistic-content-prefix {
+  margin-right: 8px;
+}
+
+/* 工具栏样式 */
+.toolbar {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.toolbar .left,
+.toolbar .right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 表格样式优化 */
+.ant-table-wrapper {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ant-table-thead > tr > th {
+  background: #f5f5f5;
+  font-weight: 500;
+}
+
+/* 状态标签样式 */
+.status-tag {
+  min-width: 60px;
+  text-align: center;
+}
+
+.status-tag.active {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #52c41a;
+}
+
+.status-tag.suspended {
+  background: #fff7e6;
+  border-color: #ffd591;
+  color: #faad14;
+}
+
+.status-tag.resigned {
+  background: #fff1f0;
+  border-color: #ffa39e;
+  color: #ff4d4f;
+}
+
+/* 响应式布局调整 */
+@media (max-width: 768px) {
+  .employee-container {
+    padding: 16px;
+  }
+  
+  .search-area {
+    padding: 16px;
+  }
+  
+  .employee-table {
+    padding: 16px;
+  }
+}
+
+/* 响应式布局 */
+@media screen and (max-width: 768px) {
+  .employee-list {
+    padding: 16px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar .left,
+  .toolbar .right {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .ant-table {
+    font-size: 14px;
+  }
+}

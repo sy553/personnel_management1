@@ -1,0 +1,56 @@
+/* 薪资管理模块通用样式 */
+.salary-page {
+  padding: 24px;
+}
+
+.salary-card {
+  background: #fff;
+  border-radius: 8px;
+}
+
+.salary-header {
+  margin-bottom: 24px;
+}
+
+.salary-form {
+  margin-bottom: 24px;
+}
+
+.salary-table {
+  margin-top: 16px;
+}
+
+.salary-statistics {
+  background: #fafafa;
+  padding: 24px;
+  border-radius: 4px;
+  margin-bottom: 24px;
+}
+
+.salary-action-button {
+  margin-right: 8px;
+}
+
+/* 响应式布局 */
+@media screen and (max-width: 768px) {
+  .salary-page {
+    padding: 12px;
+  }
+  
+  .salary-statistics {
+    padding: 16px;
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .salary-page {
+    padding: 0;
+  }
+  
+  .salary-action-button,
+  .ant-pagination,
+  .ant-table-column-sorters {
+    display: none;
+  }
+}

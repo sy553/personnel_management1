@@ -1,0 +1,33 @@
+.formContainer {
+  padding: 24px;
+}
+
+.photoPreview {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.uploadButton {
+  margin-top: 8px;
+}
+
+.tableActions {
+  display: flex;
+  gap: 8px;
+}
+
+.modalForm {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.sectionTitle {
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.uploadSection {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+}

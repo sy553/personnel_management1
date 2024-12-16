@@ -13,6 +13,7 @@ import {
   ProfileOutlined,
   PayCircleOutlined,
   BarChartOutlined,
+  SolutionOutlined,
 } from '@ant-design/icons';
 import './layout.css';
 
@@ -60,30 +61,35 @@ const Layout = () => {
       children: [
         {
           key: '/salary/structures',
-          label: <Link to="/salary/structures">工资结构</Link>,
+          label: '工资结构',
           icon: <ProfileOutlined />,
         },
         {
           key: '/salary/assignments',
-          label: <Link to="/salary/assignments">工资结构分配</Link>,
+          label: '工资结构分配',
           icon: <ProfileOutlined />,
         },
         {
           key: '/salary/records',
-          label: <Link to="/salary/records">工资发放</Link>,
+          label: '工资发放',
           icon: <PayCircleOutlined />,
         },
         {
           key: '/salary/statistics',
-          label: <Link to="/salary/statistics">薪资统计</Link>,
+          label: '薪资统计',
           icon: <BarChartOutlined />,
         },
         {
           key: '/salary/personal',
-          label: <Link to="/salary/personal">个人工资</Link>,
+          label: '个人工资',
           icon: <UserOutlined />,
         },
       ],
+    },
+    {
+      key: '/intern',
+      icon: <SolutionOutlined />,
+      label: '实习管理',
     },
     {
       type: 'divider'
@@ -108,8 +114,16 @@ const Layout = () => {
       if (salaryMenu && salaryMenu.children) {
         const childItem = salaryMenu.children.find(child => child.key === pathname);
         if (childItem) {
-          return childItem.label.props.children; // 获取Link组件内的文本
+          return childItem.label; // 获取文本
         }
+      }
+    }
+    
+    // 处理实习管理子页面
+    if (pathname.startsWith('/intern')) {
+      const internMenu = menuItems.find(item => item.key === '/intern');
+      if (internMenu) {
+        return '实习管理';
       }
     }
     
@@ -118,33 +132,23 @@ const Layout = () => {
     return item ? item.label : '';
   };
 
-  /**
-   * 处理菜单点击
-   * @param {Object} param - 点击参数
-   * @param {string} param.key - 菜单项的key
-   */
+  // 处理菜单点击
   const handleMenuClick = ({ key }) => {
-    // 如果是登出操作
     if (key === 'logout') {
+      // 处理登出
       localStorage.removeItem('token');
+      localStorage.removeItem('userInfo');
       navigate('/login');
       return;
     }
-    
-    // 检查用户权限和登录状态
-    const token = localStorage.getItem('token');
-    if (!token) {
-      // 如果未登录，先获取token
-      const userInfo = localStorage.getItem('userInfo');
-      if (userInfo) {
-        localStorage.setItem('token', JSON.parse(userInfo).token);
-      }
-    }
-    
-    // 如果不是Link包装的菜单项，则直接导航
-    if (!key.startsWith('/salary/')) {
-      navigate(key);
-    }
+    navigate(key);
+  };
+
+  // 获取当前选中的菜单项
+  const getSelectedKeys = () => {
+    const pathname = location.pathname;
+    if (pathname === '/') return ['/dashboard'];
+    return [pathname];
   };
 
   // 获取当前页面的面包屑标题
@@ -163,7 +167,7 @@ const Layout = () => {
         </div>
         <Menu
           theme="dark"
-          selectedKeys={[location.pathname]}
+          selectedKeys={getSelectedKeys()}
           defaultOpenKeys={['salary']}
           mode="inline"
           items={menuItems}

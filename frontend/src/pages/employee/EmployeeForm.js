@@ -21,7 +21,7 @@ import './EmployeeForm.less';
 
 const { Option } = Select;
 
-const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positions }) => {
+const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positions, employees }) => {
   // 创建表单实例
   const [mainForm] = Form.useForm();
   const [educationForm] = Form.useForm();
@@ -360,6 +360,23 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
     }
   };
 
+  // 处理员工类型变更
+  const handleEmployeeTypeChange = (value) => {
+    if (value === 'intern') {
+      // 清除试用期结束日期
+      mainForm.setFieldValue('probation_end_date', null);
+    } else if (value === 'probation') {
+      // 清除实习结束日期和导师
+      mainForm.setFieldValue('internship_end_date', null);
+      mainForm.setFieldValue('mentor_id', null);
+    } else {
+      // 清除所有相关字段
+      mainForm.setFieldValue('probation_end_date', null);
+      mainForm.setFieldValue('internship_end_date', null);
+      mainForm.setFieldValue('mentor_id', null);
+    }
+  };
+
   const renderMainForm = () => (
     <Form
       form={mainForm}
@@ -497,26 +514,26 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              name="department"
-              label="所属部门"
-              rules={[{ required: true, message: '请选择部门' }]}
+              name="employee_type"
+              label="员工类型"
+              rules={[{ required: true, message: '请选择员工类型' }]}
             >
-              <Select placeholder="请选择部门">
-                {departments.map(dept => (
-                  <Option key={dept.id} value={dept.id}>{dept.name}</Option>
-                ))}
+              <Select onChange={handleEmployeeTypeChange}>
+                <Option value="intern">实习生</Option>
+                <Option value="probation">试用期</Option>
+                <Option value="regular">正式员工</Option>
               </Select>
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item
-              name="position"
-              label="职位"
-              rules={[{ required: true, message: '请选择职位' }]}
+              name="department_id"
+              label="部门"
+              rules={[{ required: true, message: '请选择部门' }]}
             >
-              <Select placeholder="请选择职位">
-                {positions.map(pos => (
-                  <Option key={pos.id} value={pos.id}>{pos.name}</Option>
+              <Select>
+                {departments.map(dept => (
+                  <Option key={dept.id} value={dept.id}>{dept.name}</Option>
                 ))}
               </Select>
             </Form.Item>
@@ -524,13 +541,27 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col span={12}>
+            <Form.Item
+              name="position_id"
+              label="职位"
+              rules={[{ required: true, message: '请选择职位' }]}
+            >
+              <Select>
+                {positions.map(pos => (
+                  <Option key={pos.id} value={pos.id}>{pos.name}</Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
             <Form.Item
               name="hire_date"
               label="入职日期"
               getValueProps={(i) => ({
                 value: i ? dayjs(i) : null
               })}
+              rules={[{ required: true, message: '请选择入职日期' }]}
             >
               <DatePicker 
                 style={{ width: '100%' }} 
@@ -538,31 +569,57 @@ const EmployeeForm = ({ open, onCancel, onSuccess, employee, departments, positi
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
             <Form.Item
-              name="employment_status"
-              label="在职状态"
-              rules={[{ required: true, message: '请选择在职状态' }]}
-            >
-              <Select>
-                <Option value="active">在职</Option>
-                <Option value="suspended">休假</Option>
-                <Option value="resigned">离职</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item
-              name="resignation_date"
-              label="离职日期"
+              name="probation_end_date"
+              label="试用期结束日期"
               getValueProps={(i) => ({
                 value: i ? dayjs(i) : null
               })}
+              dependencies={['employee_type']}
             >
               <DatePicker 
                 style={{ width: '100%' }} 
                 format="YYYY-MM-DD"
+                disabled={!mainForm.getFieldValue('employee_type') || mainForm.getFieldValue('employee_type') !== 'probation'}
               />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="internship_end_date"
+              label="实习结束日期"
+              getValueProps={(i) => ({
+                value: i ? dayjs(i) : null
+              })}
+              dependencies={['employee_type']}
+            >
+              <DatePicker 
+                style={{ width: '100%' }} 
+                format="YYYY-MM-DD"
+                disabled={!mainForm.getFieldValue('employee_type') || mainForm.getFieldValue('employee_type') !== 'intern'}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="mentor_id"
+              label="导师"
+              dependencies={['employee_type']}
+            >
+              <Select
+                disabled={!mainForm.getFieldValue('employee_type') || mainForm.getFieldValue('employee_type') !== 'intern'}
+              >
+                {employees?.map(emp => (
+                  <Option key={emp.id} value={emp.id}>{emp.name}</Option>
+                ))}
+              </Select>
             </Form.Item>
           </Col>
         </Row>

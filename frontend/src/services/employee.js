@@ -75,6 +75,21 @@ export async function getEmployee(id) {
 /**
  * 获取员工列表
  * @param {Object} params - 查询参数
+ * @returns {Promise} 返回员工列表和分页信息
+ */
+export async function getEmployees(params = {}) {
+  try {
+    const response = await request.get('/api/employees', { params });
+    return response;
+  } catch (error) {
+    console.error('Get employees error:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取员工列表
+ * @param {Object} params - 查询参数
  * @param {number} params.page - 页码
  * @param {number} params.per_page - 每页数量
  * @param {string} params.search - 搜索关键词
@@ -82,17 +97,17 @@ export async function getEmployee(id) {
  * @param {number} params.position_id - 职位ID筛选
  * @returns {Promise} 返回员工列表和分页信息
  */
-export async function getEmployees(params) {
-  try {
-    console.log('Fetching employees with params:', params);
-    const response = await request.get('/api/employees', { params });
-    console.log('Get employees response:', response);
-    return response;
-  } catch (error) {
-    console.error('Get employees error:', error);
-    throw error;
-  }
-}
+// export async function getEmployees(params) {
+//   try {
+//     console.log('Fetching employees with params:', params);
+//     const response = await request.get('/api/employees', { params });
+//     console.log('Get employees response:', response);
+//     return response;
+//   } catch (error) {
+//     console.error('Get employees error:', error);
+//     throw error;
+//   }
+// }
 
 // 员工数据导入导出API
 /**

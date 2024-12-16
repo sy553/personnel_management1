@@ -13,7 +13,9 @@ const EmployeeDetail = React.lazy(() => import('../pages/employee/EmployeeDetail
 const DepartmentList = React.lazy(() => import('../pages/department/DepartmentList'));
 const PositionList = React.lazy(() => import('../pages/position/PositionList'));
 const SalaryStructure = React.lazy(() => import('../pages/salary/SalaryStructure'));
-const SalaryRecords = React.lazy(() => import('../pages/salary/Records'));
+const SalaryRecords = React.lazy(() => import('../pages/salary/SalaryRecords'));
+const InternList = React.lazy(() => import('../pages/intern/InternList'));
+const InternEvaluation = React.lazy(() => import('../pages/intern/InternEvaluation'));
 
 // 路由保护组件
 const ProtectedRoute = ({ children }) => {
@@ -100,7 +102,37 @@ const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
-
+          
+          {/* 员工管理 */}
+          <Route
+            path="employees"
+            element={
+              <ProtectedRoute>
+                <EmployeeList />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* 实习管理路由 */}
+          <Route path="intern">
+            <Route
+              index
+              element={
+                <ProtectedRoute>
+                  <InternList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="evaluation/:id"
+              element={
+                <ProtectedRoute>
+                  <InternEvaluation />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+          
           {/* 员工管理路由 */}
           <Route path="employees">
             <Route

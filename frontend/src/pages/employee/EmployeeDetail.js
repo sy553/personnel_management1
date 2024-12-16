@@ -18,7 +18,10 @@ import {
   Select,
   Row,
   Col,
-  Statistic
+  Statistic,
+  Rate,
+  Switch,
+  InputNumber
 } from 'antd';
 import { 
   ArrowLeftOutlined,
@@ -77,6 +80,9 @@ const EmployeeDetail = () => {
   const [addPositionChangeModalVisible, setAddPositionChangeModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('1'); // 新增：当前激活的标签页
   const [photoLoading, setPhotoLoading] = useState(false); // 新增：照片上传loading状态
+  const [internEvaluationModalVisible, setInternEvaluationModalVisible] = useState(false);
+  const [evaluationForm] = Form.useForm();
+  const [evaluationHistory, setEvaluationHistory] = useState([]);
 
   // 获取所有数据
   const fetchAllData = useCallback(async () => {
@@ -501,6 +507,237 @@ const EmployeeDetail = () => {
     </div>
   );
 
+  // 获取实习评估历史
+  const fetchEvaluationHistory = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/intern/status/${id}/evaluations`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const result = await response.json();
+      if (response.ok && result.code === 200) {
+        setEvaluationHistory(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching evaluation history:', error);
+    }
+  };
+
+  // 提交实习评估
+  const handleEvaluationSubmit = async () => {
+    try {
+      const values = await evaluationForm.validateFields();
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/intern/evaluations`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...values,
+          intern_status_id: employee.intern_status_id
+        })
+      });
+      
+      const result = await response.json();
+      if (response.ok && result.code === 200) {
+        message.success('评估提交成功');
+        setInternEvaluationModalVisible(false);
+        evaluationForm.resetFields();
+        fetchEvaluationHistory();
+        fetchAllData(); // 刷新员工信息
+      } else {
+        message.error(result.msg || '提交失败');
+      }
+    } catch (error) {
+      console.error('Error submitting evaluation:', error);
+      message.error('提交失败，请稍后重试');
+    }
+  };
+
+  // 渲染实习评估历史
+  const renderEvaluationHistory = () => {
+    const columns = [
+      { 
+        title: '评估日期', 
+        dataIndex: 'evaluation_date', 
+        key: 'evaluation_date' 
+      },
+      { 
+        title: '评估类型', 
+        dataIndex: 'evaluation_type', 
+        key: 'evaluation_type',
+        render: type => type === 'monthly' ? '月度评估' : '转正评估'
+      },
+      { 
+        title: '总分', 
+        dataIndex: 'total_score', 
+        key: 'total_score' 
+      },
+      { 
+        title: '评估结果', 
+        key: 'result',
+        render: record => record.conversion_recommended ? '建议转正' : '继续观察'
+      },
+      { 
+        title: '评估人', 
+        dataIndex: 'evaluator_name', 
+        key: 'evaluator_name' 
+      }
+    ];
+
+    return (
+      <div>
+        <Space style={{ marginBottom: 16 }}>
+          <Button
+            type="primary"
+            onClick={() => setInternEvaluationModalVisible(true)}
+            disabled={employee?.employee_type !== 'intern'}
+          >
+            新增评估
+          </Button>
+        </Space>
+        <Table
+          columns={columns}
+          dataSource={evaluationHistory}
+          rowKey="id"
+        />
+      </div>
+    );
+  };
+
+  // 渲染实习评估表单
+  const renderEvaluationForm = () => (
+    <Modal
+      title="实习评估"
+      visible={internEvaluationModalVisible}
+      onOk={handleEvaluationSubmit}
+      onCancel={() => {
+        setInternEvaluationModalVisible(false);
+        evaluationForm.resetFields();
+      }}
+      width={800}
+    >
+      <Form
+        form={evaluationForm}
+        layout="vertical"
+      >
+        <Form.Item
+          name="evaluation_date"
+          label="评估日期"
+          rules={[{ required: true }]}
+        >
+          <DatePicker style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item
+          name="evaluation_type"
+          label="评估类型"
+          rules={[{ required: true }]}
+        >
+          <Select>
+            <Option value="monthly">月度评估</Option>
+            <Option value="final">转正评估</Option>
+          </Select>
+        </Form.Item>
+        <Form.Item
+          name="work_performance"
+          label="工作表现"
+          rules={[{ required: true }]}
+        >
+          <Rate count={5} />
+        </Form.Item>
+        <Form.Item
+          name="learning_ability"
+          label="学习能力"
+          rules={[{ required: true }]}
+        >
+          <Rate count={5} />
+        </Form.Item>
+        <Form.Item
+          name="communication_skill"
+          label="沟通能力"
+          rules={[{ required: true }]}
+        >
+          <Rate count={5} />
+        </Form.Item>
+        <Form.Item
+          name="professional_skill"
+          label="专业技能"
+          rules={[{ required: true }]}
+        >
+          <Rate count={5} />
+        </Form.Item>
+        <Form.Item
+          name="attendance"
+          label="出勤情况"
+          rules={[{ required: true }]}
+        >
+          <Rate count={5} />
+        </Form.Item>
+        <Form.Item
+          name="evaluation_content"
+          label="评估内容"
+          rules={[{ required: true }]}
+        >
+          <Input.TextArea rows={4} />
+        </Form.Item>
+        <Form.Item
+          name="improvement_suggestions"
+          label="改进建议"
+        >
+          <Input.TextArea rows={4} />
+        </Form.Item>
+        <Form.Item
+          name="conversion_recommended"
+          label="是否推荐转正"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+        <Form.Item
+          noStyle
+          shouldUpdate={(prevValues, currentValues) =>
+            prevValues.conversion_recommended !== currentValues.conversion_recommended
+          }
+        >
+          {({ getFieldValue }) =>
+            getFieldValue('conversion_recommended') ? (
+              <>
+                <Form.Item
+                  name="recommended_position_id"
+                  label="建议转正职位"
+                >
+                  <Select>
+                    {positions.map(pos => (
+                      <Option key={pos.id} value={pos.id}>{pos.name}</Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Form.Item
+                  name="recommended_salary"
+                  label="建议转正工资"
+                >
+                  <InputNumber
+                    style={{ width: '100%' }}
+                    formatter={value => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={value => value.replace(/\¥\s?|(,*)/g, '')}
+                  />
+                </Form.Item>
+                <Form.Item
+                  name="conversion_comments"
+                  label="转正意见"
+                >
+                  <Input.TextArea rows={4} />
+                </Form.Item>
+              </>
+            ) : null
+          }
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+
   if (loading) {
     return (
       <div className="employee-detail">
@@ -526,6 +763,47 @@ const EmployeeDetail = () => {
   const handlePrint = () => {
     window.print();
   };
+
+  // 修改标签页配置
+  const tabItems = [
+    {
+      key: 'basic',
+      label: '基本信息',
+      icon: <UserOutlined />,
+      children: renderBasicInfo()
+    },
+    {
+      key: 'education',
+      label: '教育经历',
+      icon: <ReadOutlined />,
+      children: renderEducationHistory()
+    },
+    {
+      key: 'work',
+      label: '工作经历',
+      icon: <BriefcaseOutlined />,
+      children: renderWorkHistory()
+    },
+    {
+      key: 'position',
+      label: '调岗记录',
+      icon: <SwapOutlined />,
+      children: renderPositionChanges()
+    },
+    {
+      key: 'contract',
+      label: '合同记录',
+      icon: <SolutionOutlined />,
+      children: <ContractList employeeId={id} />
+    },
+    // 只有实习生显示评估记录标签
+    ...(employee?.employee_type === 'intern' ? [{
+      key: 'evaluation',
+      label: '实习评估',
+      icon: <SolutionOutlined />,
+      children: renderEvaluationHistory()
+    }] : [])
+  ];
 
   return (
     // 使用正确的类名组合
@@ -648,56 +926,21 @@ const EmployeeDetail = () => {
           {/* 标签页区域 */}
           <Card className="detail-card">
             <Tabs activeKey={activeTab} onChange={setActiveTab}>
-              <TabPane 
-                tab={
-                  <span>
-                    <ReadOutlined />
-                    教育经历
-                  </span>
-                } 
-                key="1"
-              >
-                <div className="history-list">
-                  {renderEducationHistory()}
-                </div>
-              </TabPane>
-              <TabPane 
-                tab={
-                  <span>
-                    <BriefcaseOutlined />
-                    工作经历
-                  </span>
-                } 
-                key="2"
-              >
-                <div className="history-list">
-                  {renderWorkHistory()}
-                </div>
-              </TabPane>
-              <TabPane 
-                tab={
-                  <span>
-                    <SwapOutlined />
-                    调岗记录
-                  </span>
-                } 
-                key="3"
-              >
-                <div className="history-list">
-                  {renderPositionChanges()}
-                </div>
-              </TabPane>
-              <TabPane 
-                tab={
-                  <span>
-                    <SolutionOutlined />
-                    合同信息
-                  </span>
-                } 
-                key="4"
-              >
-                <ContractList employeeId={id} />
-              </TabPane>
+              {tabItems.map(item => (
+                <TabPane 
+                  tab={
+                    <span>
+                      {item.icon}
+                      {item.label}
+                    </span>
+                  } 
+                  key={item.key}
+                >
+                  <div className="history-list">
+                    {item.children}
+                  </div>
+                </TabPane>
+              ))}
             </Tabs>
           </Card>
         </>
@@ -872,6 +1115,8 @@ const EmployeeDetail = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {renderEvaluationForm()}
     </div>
   );
 };

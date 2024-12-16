@@ -14,6 +14,8 @@ import SalaryRecords from './pages/salary/Records';
 import SalaryStatistics from './pages/salary/Statistics';
 import PersonalSalary from './pages/salary/Personal';
 import SalaryStructureAssignments from './pages/salary/SalaryStructureAssignments';
+import InternList from './pages/intern/InternList';  
+import InternEvaluation from './pages/intern/InternEvaluation';  
 import PrivateRoute from './components/common/PrivateRoute';
 
 // 配置React Router v7的特性标志
@@ -71,6 +73,11 @@ const App = () => {
                 path="/positions" 
                 element={<PositionList />} 
               />
+              {/* 实习管理 */}
+              <Route path="/intern">
+                <Route index element={<InternList />} />
+                <Route path="evaluation/:id" element={<InternEvaluation />} />
+              </Route>
               {/* 薪资管理路由 */}
               <Route path="/salary">
                 <Route path="structures" element={<SalaryStructure />} />

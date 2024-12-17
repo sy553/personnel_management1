@@ -14,6 +14,7 @@ import {
   PayCircleOutlined,
   BarChartOutlined,
   SolutionOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import './layout.css';
 
@@ -53,6 +54,28 @@ const Layout = () => {
       key: '/positions',
       icon: <ApartmentOutlined />,
       label: '职位管理',
+    },
+    {
+      key: '/attendance',
+      icon: <ClockCircleOutlined />,
+      label: '考勤管理',
+      children: [
+        {
+          key: '/attendance/check-in',
+          label: '考勤打卡',
+          icon: <ClockCircleOutlined />,
+        },
+        {
+          key: '/attendance/records',
+          label: '考勤记录',
+          icon: <ProfileOutlined />,
+        },
+        {
+          key: '/attendance/statistics',
+          label: '考勤统计',
+          icon: <BarChartOutlined />,
+        },
+      ],
     },
     {
       key: 'salary',

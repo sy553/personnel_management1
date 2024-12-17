@@ -17,6 +17,10 @@ import SalaryStructureAssignments from './pages/salary/SalaryStructureAssignment
 import InternList from './pages/intern/InternList';  
 import InternEvaluation from './pages/intern/InternEvaluation';  
 import PrivateRoute from './components/common/PrivateRoute';
+// 导入考勤相关页面
+import CheckIn from './pages/attendance/CheckIn';
+import Records from './pages/attendance/Records';
+import Statistics from './pages/attendance/Statistics';  
 
 // 配置React Router v7的特性标志
 if (typeof window !== 'undefined') {
@@ -85,6 +89,36 @@ const App = () => {
                 <Route path="records" element={<SalaryRecords />} />
                 <Route path="statistics" element={<SalaryStatistics />} />
                 <Route path="personal" element={<PersonalSalary />} />
+              </Route>
+              {/* 考勤管理路由 */}
+              <Route path="/attendance">
+                {/* 考勤打卡页面 */}
+                <Route 
+                  path="check-in" 
+                  element={
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                      <CheckIn />
+                    </React.Suspense>
+                  } 
+                />
+                {/* 考勤记录页面 */}
+                <Route 
+                  path="records" 
+                  element={
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                      <Records />
+                    </React.Suspense>
+                  } 
+                />
+                {/* 考勤统计页面 */}
+                <Route 
+                  path="statistics" 
+                  element={
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                      <Statistics />
+                    </React.Suspense>
+                  } 
+                />
               </Route>
             </Route>
           </Route>

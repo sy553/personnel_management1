@@ -16,6 +16,9 @@ const SalaryStructure = React.lazy(() => import('../pages/salary/SalaryStructure
 const SalaryRecords = React.lazy(() => import('../pages/salary/SalaryRecords'));
 const InternList = React.lazy(() => import('../pages/intern/InternList'));
 const InternEvaluation = React.lazy(() => import('../pages/intern/InternEvaluation'));
+const CheckIn = React.lazy(() => import('../pages/attendance/CheckIn'));
+const AttendanceRecords = React.lazy(() => import('../pages/attendance/Records'));
+const AttendanceStatistics = React.lazy(() => import('../pages/attendance/Statistics'));
 
 // 路由保护组件
 const ProtectedRoute = ({ children }) => {
@@ -206,6 +209,40 @@ const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* 考勤管理 */}
+          <Route path="attendance">
+            <Route
+              path="check-in"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingComponent />}>
+                    <CheckIn />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="records"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingComponent />}>
+                    <AttendanceRecords />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="statistics"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingComponent />}>
+                    <AttendanceStatistics />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+          </Route>
         </Route>
       </Routes>
     </Suspense>

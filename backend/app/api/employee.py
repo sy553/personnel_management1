@@ -1057,58 +1057,58 @@ def get_import_template():
             'msg': f'获取模板失败: {str(e)}'
         }), 500
 
-@bp.route('/status-count', methods=['GET'])
-def get_employee_status_count():
-    try:
-        result = db.session.query(
-            Employee.employment_status,
-            func.count(Employee.id).label('count')
-        ).group_by(Employee.employment_status).all()
-        
-        counts = {str(status): count for status, count in result}
-        
-        default_statuses = ['active', 'resigned', 'suspended']
-        for status in default_statuses:
-            if status not in counts:
-                counts[status] = 0
-        
-        return jsonify({
-            'code': 200,
-            'data': counts,
-            'msg': '获取员工状态统计成功'
-        })
-    except Exception as e:
-        print('获取员工状态统计错误:', str(e))
-        return jsonify({
-            'code': 500,
-            'msg': f'获取员工状态统计失败: {str(e)}'
-        })
-
 @bp.route('/stats', methods=['GET'])
 def get_employee_stats():
-    """获取员工统计数据"""
+    """获取员工统计信息"""
     try:
-        # 查询不同状态的员工数量
-        active_count = Employee.query.filter_by(employment_status='active').count()
-        suspended_count = Employee.query.filter_by(employment_status='suspended').count()
-        resigned_count = Employee.query.filter_by(employment_status='resigned').count()
-        total_count = Employee.query.count()
-
+        # 获取员工状态统计
+        status_stats = db.session.query(
+            Employee.employment_status,
+            db.func.count(Employee.id)
+        ).group_by(Employee.employment_status).all()
+        
+        # 获取员工类型统计
+        type_stats = db.session.query(
+            Employee.employee_type,
+            db.func.count(Employee.id)
+        ).group_by(Employee.employee_type).all()
+        
+        # 格式化状态统计结果
+        status_count = {
+            'active': 0,
+            'suspended': 0,
+            'resigned': 0,
+            'total': 0
+        }
+        for status, count in status_stats:
+            if status in status_count:
+                status_count[status] = count
+                status_count['total'] += count
+                
+        # 格式化类型统计结果
+        type_count = {
+            'intern': 0,
+            'probation': 0,
+            'regular': 0
+        }
+        for emp_type, count in type_stats:
+            if emp_type in type_count:
+                type_count[emp_type] = count
+        
         return jsonify({
             'code': 200,
-            'msg': '获取员工统计数据成功',
             'data': {
-                'active': active_count,
-                'suspended': suspended_count,
-                'resigned': resigned_count,
-                'total': total_count
-            }
+                'status': status_count,
+                'type': type_count
+            },
+            'msg': '获取员工统计信息成功'
         })
+        
     except Exception as e:
-        print(f'获取员工统计数据失败: {str(e)}')
+        current_app.logger.error(f"获取员工统计信息失败: {str(e)}")
         return jsonify({
             'code': 500,
-            'msg': f'获取员工统计数据失败: {str(e)}'
+            'msg': f'获取员工统计信息失败: {str(e)}'
         })
 
 @bp.route('/check_photo/<employee_id>', methods=['GET'])

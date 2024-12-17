@@ -390,6 +390,11 @@ export const downloadContract = async (filename) => {
   }
 };
 
+// 获取员工统计信息
+export async function getEmployeeStats() {
+  return request('/api/employee/stats');
+}
+
 // 初始化基础数据
 /**
  * 初始化基础数据（部门和职位）

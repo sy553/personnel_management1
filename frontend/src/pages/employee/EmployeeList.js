@@ -68,6 +68,11 @@ const EmployeeList = () => {
     resigned: 0,
     total: 0
   }); // 员工统计数据
+  const [employeeTypeStats, setEmployeeTypeStats] = useState({
+    intern: 0,
+    probation: 0,
+    regular: 0
+  }); // 员工类型统计数据
   const [departments, setDepartments] = useState([]); // 部门列表
   const [positions, setPositions] = useState([]); // 职位列表
   const [selectedDepartment, setSelectedDepartment] = useState(undefined); // 选中的部门
@@ -149,7 +154,14 @@ const EmployeeList = () => {
     try {
       const response = await axios.get('/api/employees/stats');
       if (response.data.code === 200) {
-        setEmployeeStats(response.data.data);
+        setEmployeeStats(response.data.data.status);
+        if (response.data.data.type) {
+          setEmployeeTypeStats({
+            intern: response.data.data.type.intern || 0,
+            probation: response.data.data.type.probation || 0,
+            regular: response.data.data.type.regular || 0
+          });
+        }
       }
     } catch (error) {
       console.error('获取员工统计数据失败:', error);
@@ -461,6 +473,39 @@ const EmployeeList = () => {
               value={employeeStats.total}
               prefix={<TeamOutlined style={{ color: '#1890ff' }} />}
               valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={16} className="stats-row">
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="实习员工"
+              value={employeeTypeStats.intern}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="试用期员工"
+              value={employeeTypeStats.probation}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#faad14' }}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="正式员工"
+              value={employeeTypeStats.regular}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#52c41a' }}
             />
           </Card>
         </Col>

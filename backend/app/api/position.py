@@ -54,18 +54,29 @@ def create_position():
                 'msg': '职位名称不能为空'
             })
             
-        # 检查职位名称是否已存在
-        existing_position = Position.query.filter_by(name=data['name']).first()
+        # 验证部门ID是否存在
+        if not data.get('department_id'):
+            return jsonify({
+                'code': 400,
+                'msg': '部门ID不能为空'
+            })
+            
+        # 检查同一部门下是否已存在相同职位名称
+        existing_position = Position.query.filter_by(
+            name=data['name'],
+            department_id=data['department_id']
+        ).first()
+        
         if existing_position:
             return jsonify({
                 'code': 400,
-                'msg': '该职位名称已存在'
+                'msg': '该部门下已存在相同名称的职位'
             })
             
         position = Position(
             name=data['name'],
             description=data.get('description', ''),
-            department_id=data.get('department_id'),
+            department_id=data['department_id'],
             level=data.get('level', 1)
         )
         
@@ -97,16 +108,29 @@ def update_position(id):
             
         data = request.get_json()
         
-        # 如果要更新名称，检查是否与其他职位重复
-        if 'name' in data and data['name'] != position.name:
-            existing_position = Position.query.filter_by(name=data['name']).first()
+        # 如果要更新名称或部门，检查是否与其他职位重复
+        if ('name' in data and data['name'] != position.name) or \
+           ('department_id' in data and data['department_id'] != position.department_id):
+            # 确定要检查的部门ID和职位名称
+            check_department_id = data.get('department_id', position.department_id)
+            check_name = data.get('name', position.name)
+            
+            # 检查同一部门下是否已存在相同职位名称（排除当前职位）
+            existing_position = Position.query.filter(
+                Position.name == check_name,
+                Position.department_id == check_department_id,
+                Position.id != id
+            ).first()
+            
             if existing_position:
                 return jsonify({
                     'code': 400,
-                    'msg': '该职位名称已存在'
+                    'msg': '该部门下已存在相同名称的职位'
                 })
+        
+        # 更新字段
+        if 'name' in data:
             position.name = data['name']
-            
         if 'description' in data:
             position.description = data['description']
         if 'department_id' in data:

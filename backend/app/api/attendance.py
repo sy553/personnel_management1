@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 from app.models.attendance import Attendance, Leave, Overtime, AttendanceRule
+from app.models.statutory_holiday import StatutoryHoliday
 from app.models.employee import Employee
-from app.models.user import User  # 添加User模型的导入
+from app.models.user import User
 from app import db
 from datetime import datetime, timedelta, time
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -63,10 +64,28 @@ def get_attendance_record(id):
         })
 
 def get_attendance_status(check_time, rule):
-    """根据考勤规则判断考勤状态"""
+    """根据考勤规则判断考勤状态
+    
+    Args:
+        check_time: 打卡时间
+        rule: 考勤规则
+        
+    Returns:
+        str: 考勤状态(normal/late/early/absent)
+    """
     if not check_time:
         return 'absent'  # 缺勤
-        
+    
+    # 检查是否为法定节假日
+    holiday = StatutoryHoliday.query.filter_by(
+        date=check_time.date()
+    ).first()
+    
+    # 如果是节假日，则不判断迟到早退
+    if holiday and holiday.holiday_type == 'holiday':
+        return 'normal'
+    
+    # 如果是调休工作日或普通工作日，正常判断
     check_time = check_time.time()
     late_threshold = timedelta(minutes=rule.late_threshold)
     early_threshold = timedelta(minutes=rule.early_leave_threshold)

@@ -6,6 +6,7 @@ from .position import Position
 from .salary import SalaryStructure, SalaryRecord
 from .attendance import Attendance, Leave
 from .salary_structure_assignment import SalaryStructureAssignment
+from .statutory_holiday import StatutoryHoliday
 
 __all__ = [
     'User',
@@ -18,5 +19,6 @@ __all__ = [
     'Leave',
     'EducationHistory',
     'WorkHistory',
-    'SalaryStructureAssignment'
+    'SalaryStructureAssignment',
+    'StatutoryHoliday'
 ]

@@ -75,6 +75,11 @@ const Layout = () => {
           label: '考勤统计',
           icon: <BarChartOutlined />,
         },
+        {
+          key: '/attendance/leave',
+          label: '请假管理',
+          icon: <SolutionOutlined />,
+        },
       ],
     },
     {

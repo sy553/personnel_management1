@@ -102,3 +102,35 @@ class Overtime(db.Model):
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S')
         }
+
+class AttendanceRule(db.Model):
+    """考勤规则配置表"""
+    __tablename__ = 'attendance_rules'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, comment='规则名称')
+    work_start_time = db.Column(db.Time, nullable=False, comment='上班时间')
+    work_end_time = db.Column(db.Time, nullable=False, comment='下班时间')
+    late_threshold = db.Column(db.Integer, default=15, comment='迟到阈值(分钟)')
+    early_leave_threshold = db.Column(db.Integer, default=15, comment='早退阈值(分钟)')
+    overtime_minimum = db.Column(db.Integer, default=60, comment='最小加班时长(分钟)')
+    is_default = db.Column(db.Boolean, default=False, comment='是否为默认规则')
+    description = db.Column(db.String(200), comment='规则说明')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'work_start_time': self.work_start_time.strftime('%H:%M'),
+            'work_end_time': self.work_end_time.strftime('%H:%M'),
+            'late_threshold': self.late_threshold,
+            'early_leave_threshold': self.early_leave_threshold,
+            'overtime_minimum': self.overtime_minimum,
+            'is_default': self.is_default,
+            'description': self.description,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+        }

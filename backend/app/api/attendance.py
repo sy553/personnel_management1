@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
-from app.models.attendance import Attendance, Leave, Overtime
+from app.models.attendance import Attendance, Leave, Overtime, AttendanceRule
 from app.models.employee import Employee
+from app.models.user import User  # 添加User模型的导入
 from app import db
 from datetime import datetime, timedelta, time
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -61,6 +62,24 @@ def get_attendance_record(id):
             'msg': f'获取考勤记录失败: {str(e)}'
         })
 
+def get_attendance_status(check_time, rule):
+    """根据考勤规则判断考勤状态"""
+    if not check_time:
+        return 'absent'  # 缺勤
+        
+    check_time = check_time.time()
+    late_threshold = timedelta(minutes=rule.late_threshold)
+    early_threshold = timedelta(minutes=rule.early_leave_threshold)
+    
+    # 判断迟到
+    if check_time > (datetime.combine(datetime.today(), rule.work_start_time) + late_threshold).time():
+        return 'late'
+    # 判断早退
+    elif check_time < (datetime.combine(datetime.today(), rule.work_end_time) - early_threshold).time():
+        return 'early'
+    else:
+        return 'normal'
+
 @bp.route('/attendance', methods=['POST'])
 def create_attendance_record():
     """创建考勤记录"""
@@ -91,47 +110,60 @@ def create_attendance_record():
             date=date
         ).first()
         
+        # 获取默认考勤规则
+        rule = AttendanceRule.query.filter_by(is_default=True).first()
+        if not rule:
+            return jsonify({
+                'code': 500,
+                'msg': '未找到默认考勤规则'
+            })
+        
         if existing_record:
             # 如果已有记录，更新签退时间
             if 'check_out' in data:
-                existing_record.check_out = datetime.combine(
-                    date,
-                    datetime.strptime(data['check_out'], '%H:%M').time()
-                )
-                db.session.commit()
-                return jsonify({
-                    'code': 200,
-                    'msg': '签退成功',
-                    'data': existing_record.to_dict()
-                })
+                check_out_time = datetime.strptime(data['check_out'], '%H:%M')
+                existing_record.check_out = datetime.combine(date, check_out_time.time())
+                # 更新考勤状态
+                if existing_record.check_in:
+                    existing_record.status = get_attendance_status(existing_record.check_out, rule)
+            db.session.commit()
             return jsonify({
-                'code': 400,
-                'msg': '该员工当天已有考勤记录'
+                'code': 200,
+                'data': existing_record.to_dict(),
+                'msg': '更新考勤记录成功'
             })
+        else:
+            # 创建新记录
+            check_in_time = None
+            if 'check_in' in data:
+                check_in_time = datetime.strptime(data['check_in'], '%H:%M')
+                check_in_time = datetime.combine(date, check_in_time.time())
+                
+            check_out_time = None
+            if 'check_out' in data:
+                check_out_time = datetime.strptime(data['check_out'], '%H:%M')
+                check_out_time = datetime.combine(date, check_out_time.time())
             
-        # 创建新的考勤记录
-        record = Attendance(
-            employee_id=data['employee_id'],
-            date=date,
-            check_in=datetime.combine(
-                date,
-                datetime.strptime(data['check_in'], '%H:%M').time()
-            ) if 'check_in' in data else None,
-            check_out=datetime.combine(
-                date,
-                datetime.strptime(data['check_out'], '%H:%M').time()
-            ) if 'check_out' in data else None,
-            status='normal'  # 初始状态设为正常
-        )
-        
-        db.session.add(record)
-        db.session.commit()
-        
-        return jsonify({
-            'code': 200,
-            'msg': '考勤记录创建成功',
-            'data': record.to_dict()
-        })
+            # 根据考勤规则判断状态
+            status = get_attendance_status(check_in_time, rule)
+            
+            record = Attendance(
+                employee_id=data['employee_id'],
+                date=date,
+                check_in=check_in_time,
+                check_out=check_out_time,
+                status=status,
+                remark=data.get('remark')
+            )
+            
+            db.session.add(record)
+            db.session.commit()
+            
+            return jsonify({
+                'code': 200,
+                'data': record.to_dict(),
+                'msg': '创建考勤记录成功'
+            })
     except Exception as e:
         db.session.rollback()
         return jsonify({
@@ -348,29 +380,42 @@ def get_leave_records():
     管理员可以查看所有人的请假记录
     """
     try:
+        # 获取当前用户
         current_user_id = get_jwt_identity()
-        current_user = Employee.query.get(current_user_id)
-        
+        current_user = User.query.get(current_user_id)
+        if not current_user:
+            return jsonify({
+                'code': 401,
+                'msg': '用户未登录或不存在'
+            })
+
         # 获取查询参数
         employee_id = request.args.get('employee_id', type=int)
-        start_date = request.args.get('start_date')  # 格式：YYYY-MM-DD
-        end_date = request.args.get('end_date')  # 格式：YYYY-MM-DD
-        status = request.args.get('status')  # 状态：pending/approved/rejected
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        status = request.args.get('status')
         
-        # 构建查询
         query = Leave.query
         
-        # 权限控制：普通员工只能查看自己的记录
-        if not current_user.is_admin:
-            query = query.filter_by(employee_id=current_user_id)
+        # 权限控制：普通员工只能查看自己的请假记录
+        if current_user.role != 'admin':
+            current_employee = Employee.query.filter_by(user_id=current_user_id).first()
+            if not current_employee:
+                return jsonify({
+                    'code': 404,
+                    'msg': '未找到员工信息'
+                })
+            query = query.filter_by(employee_id=current_employee.id)
         elif employee_id:  # 管理员可以按员工ID筛选
             query = query.filter_by(employee_id=employee_id)
             
-        # 应用其他过滤条件
+        # 日期范围筛选
         if start_date:
             query = query.filter(Leave.start_date >= datetime.strptime(start_date, '%Y-%m-%d'))
         if end_date:
             query = query.filter(Leave.end_date <= datetime.strptime(end_date, '%Y-%m-%d'))
+            
+        # 状态筛选
         if status:
             query = query.filter_by(status=status)
             
@@ -378,12 +423,12 @@ def get_leave_records():
         return jsonify({
             'code': 200,
             'data': [record.to_dict() for record in records],
-            'msg': '获取请假记录列表成功'
+            'msg': '获取请假记录成功'
         })
     except Exception as e:
         return jsonify({
             'code': 500,
-            'msg': f'获取请假记录列表失败: {str(e)}'
+            'msg': f'获取请假记录失败: {str(e)}'
         })
 
 @bp.route('/leave', methods=['POST'])
@@ -393,9 +438,22 @@ def create_leave_request():
     
     必填字段：leave_type, start_date, end_date
     可选字段：reason
+    
+    日期格式支持：
+    - YYYY-MM-DD
+    - YYYY-MM-DD HH:MM:SS
     """
     try:
+        # 获取当前用户
         current_user_id = get_jwt_identity()
+        current_employee = Employee.query.filter_by(user_id=current_user_id).first()
+        
+        if not current_employee:
+            return jsonify({
+                'code': 404,
+                'msg': '未找到员工信息'
+            })
+            
         data = request.get_json()
         
         # 验证必要字段
@@ -407,14 +465,40 @@ def create_leave_request():
                     'msg': f'缺少必要字段: {field}'
                 })
                 
+        # 处理日期格式
+        try:
+            # 尝试解析完整的日期时间格式
+            start_date = datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            # 如果失败，尝试解析日期格式并设置时间为00:00:00
+            try:
+                start_date = datetime.strptime(data['start_date'], '%Y-%m-%d')
+            except ValueError:
+                return jsonify({
+                    'code': 400,
+                    'msg': '开始日期格式错误，请使用YYYY-MM-DD或YYYY-MM-DD HH:MM:SS'
+                })
+        
+        try:
+            # 尝试解析完整的日期时间格式
+            end_date = datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            # 如果失败，尝试解析日期格式并设置时间为23:59:59
+            try:
+                end_date = datetime.strptime(data['end_date'], '%Y-%m-%d') + timedelta(days=1, seconds=-1)
+            except ValueError:
+                return jsonify({
+                    'code': 400,
+                    'msg': '结束日期格式错误，请使用YYYY-MM-DD或YYYY-MM-DD HH:MM:SS'
+                })
+                
         # 创建请假记录
         leave = Leave(
-            employee_id=current_user_id,
+            employee_id=current_employee.id,
             leave_type=data['leave_type'],
-            start_date=datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S'),
-            end_date=datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S'),
-            reason=data.get('reason', ''),
-            status='pending'
+            start_date=start_date,
+            end_date=end_date,
+            reason=data.get('reason', '')
         )
         
         db.session.add(leave)
@@ -425,6 +509,7 @@ def create_leave_request():
             'data': leave.to_dict(),
             'msg': '创建请假申请成功'
         })
+        
     except Exception as e:
         db.session.rollback()
         return jsonify({
@@ -440,21 +525,21 @@ def approve_leave_request(id):
     只有管理员可以审批请假申请
     """
     try:
+        # 获取当前用户
         current_user_id = get_jwt_identity()
-        current_user = Employee.query.get(current_user_id)
+        current_user = User.query.get(current_user_id)
         
-        # 验证权限
-        if not current_user.is_admin:
+        if not current_user or current_user.role != 'admin':
             return jsonify({
                 'code': 403,
-                'msg': '没有权限审批请假申请'
+                'msg': '没有权限进行此操作'
             })
             
         leave = Leave.query.get(id)
         if not leave:
             return jsonify({
                 'code': 404,
-                'msg': '请假申请不存在'
+                'msg': '请假记录不存在'
             })
             
         data = request.get_json()
@@ -465,14 +550,17 @@ def approve_leave_request(id):
                 'msg': '无效的审批状态'
             })
             
+        # 更新请假记录
         leave.status = status
         leave.approved_by = current_user_id
+        leave.updated_at = datetime.utcnow()
+        
         db.session.commit()
         
         return jsonify({
             'code': 200,
             'data': leave.to_dict(),
-            'msg': f'请假申请{status}成功'
+            'msg': '审批请假申请成功'
         })
     except Exception as e:
         db.session.rollback()
@@ -493,7 +581,7 @@ def get_overtime_records():
     """
     try:
         current_user_id = get_jwt_identity()
-        current_user = Employee.query.get(current_user_id)
+        current_user = User.query.get(current_user_id)
         
         # 获取查询参数
         employee_id = request.args.get('employee_id', type=int)
@@ -584,7 +672,7 @@ def approve_overtime_request(id):
     """
     try:
         current_user_id = get_jwt_identity()
-        current_user = Employee.query.get(current_user_id)
+        current_user = User.query.get(current_user_id)
         
         # 验证权限
         if not current_user.is_admin:
@@ -622,4 +710,199 @@ def approve_overtime_request(id):
         return jsonify({
             'code': 500,
             'msg': f'审批加班申请失败: {str(e)}'
+        })
+
+# 考勤规则相关API
+@bp.route('/attendance-rules', methods=['GET'])
+@jwt_required()
+def get_attendance_rules():
+    """获取考勤规则列表"""
+    try:
+        rules = AttendanceRule.query.all()
+        return jsonify({
+            'code': 200,
+            'data': [rule.to_dict() for rule in rules],
+            'msg': '获取考勤规则列表成功'
+        })
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'msg': f'获取考勤规则列表失败: {str(e)}'
+        })
+
+@bp.route('/attendance-rules/<int:id>', methods=['GET'])
+@jwt_required()
+def get_attendance_rule(id):
+    """获取单个考勤规则"""
+    try:
+        rule = AttendanceRule.query.get(id)
+        if not rule:
+            return jsonify({
+                'code': 404,
+                'msg': '考勤规则不存在'
+            })
+        return jsonify({
+            'code': 200,
+            'data': rule.to_dict(),
+            'msg': '获取考勤规则成功'
+        })
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'msg': f'获取考勤规则失败: {str(e)}'
+        })
+
+@bp.route('/attendance-rules', methods=['POST'])
+@jwt_required()
+def create_attendance_rule():
+    """创建考勤规则"""
+    try:
+        data = request.get_json()
+        
+        # 验证必要字段
+        required_fields = ['name', 'work_start_time', 'work_end_time']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'code': 400,
+                    'msg': f'缺少必要字段: {field}'
+                })
+        
+        # 转换时间字符串为time对象
+        try:
+            work_start_time = datetime.strptime(data['work_start_time'], '%H:%M').time()
+            work_end_time = datetime.strptime(data['work_end_time'], '%H:%M').time()
+        except ValueError:
+            return jsonify({
+                'code': 400,
+                'msg': '时间格式错误，请使用HH:MM格式'
+            })
+        
+        # 如果设置为默认规则，先将其他规则的default设置为False
+        if data.get('is_default'):
+            AttendanceRule.query.filter_by(is_default=True).update({'is_default': False})
+        
+        # 创建新规则
+        rule = AttendanceRule(
+            name=data['name'],
+            work_start_time=work_start_time,
+            work_end_time=work_end_time,
+            late_threshold=data.get('late_threshold', 15),
+            early_leave_threshold=data.get('early_leave_threshold', 15),
+            overtime_minimum=data.get('overtime_minimum', 60),
+            is_default=data.get('is_default', False),
+            description=data.get('description')
+        )
+        
+        db.session.add(rule)
+        db.session.commit()
+        
+        return jsonify({
+            'code': 200,
+            'data': rule.to_dict(),
+            'msg': '创建考勤规则成功'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'code': 500,
+            'msg': f'创建考勤规则失败: {str(e)}'
+        })
+
+@bp.route('/attendance-rules/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_attendance_rule(id):
+    """更新考勤规则"""
+    try:
+        rule = AttendanceRule.query.get(id)
+        if not rule:
+            return jsonify({
+                'code': 404,
+                'msg': '考勤规则不存在'
+            })
+        
+        data = request.get_json()
+        
+        # 更新时间字段
+        if 'work_start_time' in data:
+            try:
+                rule.work_start_time = datetime.strptime(data['work_start_time'], '%H:%M').time()
+            except ValueError:
+                return jsonify({
+                    'code': 400,
+                    'msg': '上班时间格式错误，请使用HH:MM格式'
+                })
+        
+        if 'work_end_time' in data:
+            try:
+                rule.work_end_time = datetime.strptime(data['work_end_time'], '%H:%M').time()
+            except ValueError:
+                return jsonify({
+                    'code': 400,
+                    'msg': '下班时间格式错误，请使用HH:MM格式'
+                })
+        
+        # 如果设置为默认规则，先将其他规则的default设置为False
+        if data.get('is_default'):
+            AttendanceRule.query.filter(AttendanceRule.id != id).update({'is_default': False})
+        
+        # 更新其他字段
+        if 'name' in data:
+            rule.name = data['name']
+        if 'late_threshold' in data:
+            rule.late_threshold = data['late_threshold']
+        if 'early_leave_threshold' in data:
+            rule.early_leave_threshold = data['early_leave_threshold']
+        if 'overtime_minimum' in data:
+            rule.overtime_minimum = data['overtime_minimum']
+        if 'is_default' in data:
+            rule.is_default = data['is_default']
+        if 'description' in data:
+            rule.description = data['description']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'code': 200,
+            'data': rule.to_dict(),
+            'msg': '更新考勤规则成功'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'code': 500,
+            'msg': f'更新考勤规则失败: {str(e)}'
+        })
+
+@bp.route('/attendance-rules/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_attendance_rule(id):
+    """删除考勤规则"""
+    try:
+        rule = AttendanceRule.query.get(id)
+        if not rule:
+            return jsonify({
+                'code': 404,
+                'msg': '考勤规则不存在'
+            })
+        
+        # 不允许删除默认规则
+        if rule.is_default:
+            return jsonify({
+                'code': 400,
+                'msg': '不能删除默认考勤规则'
+            })
+        
+        db.session.delete(rule)
+        db.session.commit()
+        
+        return jsonify({
+            'code': 200,
+            'msg': '删除考勤规则成功'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'code': 500,
+            'msg': f'删除考勤规则失败: {str(e)}'
         })

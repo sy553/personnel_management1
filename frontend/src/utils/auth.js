@@ -1,3 +1,5 @@
+import { message } from 'antd';
+
 /**
  * 认证相关的工具函数
  */
@@ -83,4 +85,49 @@ export const getCurrentUser = () => {
     console.error('获取用户信息失败:', error);
     return null;
   }
+};
+
+/**
+ * 获取用户信息
+ * @returns {Object|null} 返回用户信息对象，如果不存在则返回null
+ */
+export const getUserInfo = () => {
+  try {
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (!userInfoStr) {
+      return null;
+    }
+    return JSON.parse(userInfoStr);
+  } catch (error) {
+    console.error('解析用户信息失败:', error);
+    return null;
+  }
+};
+
+/**
+ * 检查用户是否已登录
+ * @returns {boolean} 返回是否已登录
+ */
+export const isLoggedIn = () => {
+  const token = localStorage.getItem('token');
+  const userInfo = getUserInfo();
+  return !!(token && userInfo);
+};
+
+/**
+ * 检查用户是否有员工信息
+ * @returns {boolean} 返回是否有员工信息
+ */
+export const hasEmployeeInfo = () => {
+  const userInfo = getUserInfo();
+  return !!(userInfo && userInfo.employeeId);
+};
+
+/**
+ * 获取员工ID
+ * @returns {number|null} 返回员工ID，如果不存在则返回null
+ */
+export const getEmployeeId = () => {
+  const userInfo = getUserInfo();
+  return userInfo ? userInfo.employeeId : null;
 };

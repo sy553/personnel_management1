@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from app.services.auth_service import AuthService
-from app.models import User
+from app.models import User, Employee
 
 # 创建认证蓝图
 auth_bp = Blueprint('auth', __name__)
@@ -68,17 +68,32 @@ def login():
         # 创建访问令牌
         access_token = create_access_token(identity=user.id)
         
+        # 获取员工信息
+        employee = Employee.query.filter_by(user_id=user.id).first()
+        
+        # 构建用户信息
+        user_info = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'role': user.role
+        }
+        
+        # 如果存在员工信息，添加到返回数据中
+        if employee:
+            user_info.update({
+                'employeeId': employee.id,
+                'employeeName': employee.name,
+                'departmentId': employee.department_id,
+                'positionId': employee.position_id
+            })
+        
         return jsonify({
             'code': 200,
             'message': '登录成功',
             'data': {
                 'token': access_token,
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'role': user.role
-                }
+                'user': user_info
             }
         })
     except Exception as e:

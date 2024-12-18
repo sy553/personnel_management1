@@ -30,3 +30,15 @@ def manager_required():
             return fn(*args, **kwargs)
         return decorator
     return wrapper
+
+def login_required(fn):
+    """用户登录装饰器"""
+    @wraps(fn)
+    def decorator(*args, **kwargs):
+        verify_jwt_in_request()
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"msg": "需要登录"}), 401
+        return fn(*args, **kwargs)
+    return decorator

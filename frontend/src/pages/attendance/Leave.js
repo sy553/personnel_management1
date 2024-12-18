@@ -1,22 +1,23 @@
 // Leave.js - 请假申请页面
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
+  Table,
+  Button,
   Form,
   Input,
   DatePicker,
   Select,
-  Button,
-  Table,
   message,
+  Modal,
   Space,
-  Tag,
-  Modal
+  Tag
 } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
 import { getLeaveRecords, createLeaveRequest, approveLeaveRequest } from '../../services/leave';
+import { getUserInfo, hasEmployeeInfo } from '../../utils/auth';
 import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
@@ -87,15 +88,27 @@ const LeavePage = () => {
   const fetchRecords = async () => {
     try {
       setLoading(true);
-      const response = await getLeaveRecords(filters);
+      // 获取当前登录用户信息
+      const userInfo = getUserInfo();
+      if (!userInfo || !userInfo.employeeId) {
+        throw new Error('未找到员工信息');
+      }
+      
+      // 构建查询参数
+      const params = {
+        ...filters,
+        employee_id: userInfo.employeeId
+      };
+      
+      const response = await getLeaveRecords(params);
       if (response && response.code === 200) {
         setRecords(response.data || []);
       } else {
-        message.error(response?.msg || '获取请假记录失败');
+        message.error('获取请假记录失败');
       }
     } catch (error) {
       console.error('获取请假记录失败:', error);
-      message.error('获取请假记录失败');
+      message.error(error.message || '获取请假记录失败');
     } finally {
       setLoading(false);
     }

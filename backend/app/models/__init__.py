@@ -4,7 +4,7 @@ from .employee import Employee, EducationHistory, WorkHistory
 from .department import Department
 from .position import Position
 from .salary import SalaryStructure, SalaryRecord
-from .attendance import Attendance, Leave
+from .attendance import Attendance, Leave, Overtime, AttendanceRule, AttendanceLocation
 from .salary_structure_assignment import SalaryStructureAssignment
 from .statutory_holiday import StatutoryHoliday
 
@@ -17,6 +17,9 @@ __all__ = [
     'SalaryRecord',
     'Attendance',
     'Leave',
+    'Overtime',
+    'AttendanceRule',
+    'AttendanceLocation',
     'EducationHistory',
     'WorkHistory',
     'SalaryStructureAssignment',

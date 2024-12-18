@@ -21,7 +21,8 @@ import PrivateRoute from './components/common/PrivateRoute';
 import CheckIn from './pages/attendance/CheckIn';
 import Records from './pages/attendance/Records';
 import Statistics from './pages/attendance/Statistics';  
-import Leave from './pages/attendance/Leave';  
+import Leave from './pages/attendance/Leave';
+import Rules from './pages/attendance/Rules';  
 
 // 配置React Router v7的特性标志
 if (typeof window !== 'undefined') {
@@ -126,6 +127,15 @@ const App = () => {
                   element={
                     <React.Suspense fallback={<div>Loading...</div>}>
                       <Leave />
+                    </React.Suspense>
+                  } 
+                />
+                {/* 考勤规则页面 */}
+                <Route 
+                  path="rules" 
+                  element={
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                      <Rules />
                     </React.Suspense>
                   } 
                 />

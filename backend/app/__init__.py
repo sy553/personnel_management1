@@ -91,7 +91,8 @@ def create_app(config_name=None):
     from .api.attendance import bp as attendance_bp
     from .api.user import bp as user_bp  
     from .api.intern import bp as intern_bp  
-    from .api.statutory_holiday import bp as statutory_holiday_bp  # 添加新的蓝图导入
+    from .api.statutory_holiday import bp as statutory_holiday_bp
+    from app.routes.attendance import attendance as attendance_rules_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(employee_bp)
@@ -100,9 +101,11 @@ def create_app(config_name=None):
     app.register_blueprint(position_bp)
     app.register_blueprint(salary_bp)
     app.register_blueprint(attendance_bp)
-    app.register_blueprint(user_bp)  
-    app.register_blueprint(intern_bp)  
-    app.register_blueprint(statutory_holiday_bp)  # 注册新的蓝图
+    app.register_blueprint(user_bp)
+    app.register_blueprint(intern_bp)
+    app.register_blueprint(statutory_holiday_bp)
+    # 注册考勤规则蓝图，添加URL前缀
+    app.register_blueprint(attendance_rules_bp, url_prefix='/api/attendance')
     
     # 配置日志
     if not app.debug and not app.testing:
@@ -141,5 +144,10 @@ def create_app(config_name=None):
             'code': 500,
             'msg': '服务器内部错误'
         }), 500
+    
+    # 初始化默认数据
+    with app.app_context():
+        from .utils.init_data import init_default_attendance_rule
+        init_default_attendance_rule()
     
     return app

@@ -132,10 +132,16 @@ def create_attendance_record():
         # 获取默认考勤规则
         rule = AttendanceRule.query.filter_by(is_default=True).first()
         if not rule:
-            return jsonify({
-                'code': 500,
-                'msg': '未找到默认考勤规则'
-            })
+            # 尝试初始化默认规则
+            from app.utils.init_data import init_default_attendance_rule
+            if init_default_attendance_rule():
+                rule = AttendanceRule.query.filter_by(is_default=True).first()
+            
+            if not rule:
+                return jsonify({
+                    'code': 500,
+                    'msg': '系统未配置默认考勤规则，请联系管理员设置'
+                })
         
         if existing_record:
             # 如果已有记录，更新签退时间

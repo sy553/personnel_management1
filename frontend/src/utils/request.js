@@ -48,8 +48,19 @@ request.interceptors.request.use(
  */
 request.interceptors.response.use(
   response => {
-    // 直接返回响应数据
-    return response.data;
+    // 检查响应数据格式
+    const responseData = response.data;
+    
+    // 处理成功响应
+    if (responseData.code === 200 || responseData.overview) { // 兼容仪表盘API
+      return responseData;
+    }
+    
+    // 处理业务错误
+    const error = new Error(responseData.msg || responseData.message || '请求失败');
+    error.code = responseData.code;
+    error.data = responseData.data;
+    return Promise.reject(error);
   },
   error => {
     console.error('响应错误:', error);
@@ -62,7 +73,7 @@ request.interceptors.response.use(
         // 如果是登录接口的401错误，直接返回错误信息
         if (error.config.url === '/api/auth/login') {
           return Promise.reject({
-            message: data.message || '登录失败',
+            message: data.message || data.msg || '登录失败',
             status: status,
             data: data
           });
@@ -73,31 +84,32 @@ request.interceptors.response.use(
         if (currentPath !== '/login') {
           // 保存当前路径，登录后可以重定向回来
           localStorage.setItem('redirectPath', currentPath);
+          // 清除认证信息
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          // 跳转到登录页
+          window.location.href = '/login';
         }
-        // 清除认证信息
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        // 跳转到登录页
-        window.location.href = '/login';
-        message.error(data.message || '未授权，请重新登录');
+        
         return Promise.reject({
-          message: data.message || '未授权，请重新登录',
+          message: data.message || data.msg || '未授权，请重新登录',
           status: status,
           data: data
         });
       }
       
-      // 其他错误交给调用方处理
+      // 处理其他HTTP错误
       return Promise.reject({
-        message: data.message || '请求失败',
+        message: data.message || data.msg || '请求失败',
         status: status,
         data: data
       });
     }
     
-    // 网络错误等其他错误
+    // 处理网络错误等其他错误
+    const errorMessage = error.message === 'Network Error' ? '网络错误，请检查网络连接' : '请求失败，请稍后重试';
     return Promise.reject({
-      message: '网络错误，请稍后重试',
+      message: errorMessage,
       status: null,
       data: null
     });

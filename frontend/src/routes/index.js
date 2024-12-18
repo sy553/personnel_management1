@@ -19,6 +19,7 @@ const InternEvaluation = React.lazy(() => import('../pages/intern/InternEvaluati
 const CheckIn = React.lazy(() => import('../pages/attendance/CheckIn'));
 const AttendanceRecords = React.lazy(() => import('../pages/attendance/Records'));
 const AttendanceStatistics = React.lazy(() => import('../pages/attendance/Statistics'));
+const AttendanceRules = React.lazy(() => import('../pages/attendance/Rules'));
 
 // 路由保护组件
 const ProtectedRoute = ({ children }) => {
@@ -238,6 +239,16 @@ const AppRoutes = () => {
                 <ProtectedRoute>
                   <Suspense fallback={<LoadingComponent />}>
                     <AttendanceStatistics />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="rules"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingComponent />}>
+                    <AttendanceRules />
                   </Suspense>
                 </ProtectedRoute>
               }

@@ -15,6 +15,7 @@ import {
   BarChartOutlined,
   SolutionOutlined,
   ClockCircleOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import './layout.css';
 
@@ -79,6 +80,11 @@ const Layout = () => {
           key: '/attendance/leave',
           label: '请假管理',
           icon: <SolutionOutlined />,
+        },
+        {
+          key: '/attendance/rules',
+          label: '考勤规则',
+          icon: <SettingOutlined />,
         },
       ],
     },

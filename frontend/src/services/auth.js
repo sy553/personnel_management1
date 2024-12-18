@@ -18,10 +18,11 @@ const authService = {
       if (response?.data?.token && response?.data?.user) {
         // 保存token和用户信息到localStorage
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('auth', JSON.stringify(response.data.user));
         // 设置token过期时间（24小时）
         const expiresAt = new Date().getTime() + 24 * 60 * 60 * 1000;
         localStorage.setItem('tokenExpiresAt', expiresAt.toString());
+        
         return response.data;
       }
       
@@ -76,7 +77,7 @@ const authService = {
    */
   clearAuth: () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('userInfo');
     localStorage.removeItem('tokenExpiresAt');
   },
 
@@ -155,7 +156,7 @@ const authService = {
     try {
       console.log('Auth service: Attempting logout');
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem('userInfo');
       localStorage.removeItem('tokenExpiresAt');
       return { code: 200, message: '退出登录成功' };
     } catch (error) {

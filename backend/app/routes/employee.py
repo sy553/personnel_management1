@@ -844,3 +844,37 @@ def delete_work_history(employee_id, work_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'code': 500, 'message': str(e)}), 500
+
+@employee_bp.route('/api/employees/by-user/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_employee_by_user_id(user_id):
+    """通过用户ID获取员工信息"""
+    try:
+        # 查询员工信息
+        employee = Employee.query.filter_by(user_id=user_id).first()
+        
+        if not employee:
+            return jsonify({
+                'code': 404,
+                'message': '未找到员工信息',
+                'data': None
+            }), 404
+            
+        return jsonify({
+            'code': 200,
+            'message': '获取员工信息成功',
+            'data': {
+                'id': employee.id,
+                'name': employee.name,
+                'employee_id': employee.employee_id,
+                'department_id': employee.department_id,
+                'position_id': employee.position_id
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'message': f'获取员工信息失败: {str(e)}',
+            'data': None
+        }), 500

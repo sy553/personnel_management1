@@ -3,6 +3,7 @@ from app.models.attendance import Attendance, Leave, Overtime, AttendanceRule
 from app.models.statutory_holiday import StatutoryHoliday
 from app.models.employee import Employee
 from app.models.user import User
+from app.models.attendance_location import AttendanceLocation
 from app import db
 from datetime import datetime, timedelta, time
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -424,13 +425,12 @@ def get_leave_records():
         
         # 权限控制：普通员工只能查看自己的请假记录
         if current_user.role != 'admin':
-            current_employee = Employee.query.filter_by(user_id=current_user_id).first()
-            if not current_employee:
+            if not current_user.employee:  # 使用新的关系
                 return jsonify({
                     'code': 404,
                     'msg': '未找到员工信息'
                 })
-            query = query.filter_by(employee_id=current_employee.id)
+            query = query.filter_by(employee_id=current_user.employee.id)
         elif employee_id:  # 管理员可以按员工ID筛选
             query = query.filter_by(employee_id=employee_id)
             
@@ -471,9 +471,9 @@ def create_leave_request():
     try:
         # 获取当前用户
         current_user_id = get_jwt_identity()
-        current_employee = Employee.query.filter_by(user_id=current_user_id).first()
+        current_user = User.query.get(current_user_id)
         
-        if not current_employee:
+        if not current_user or not current_user.employee:  # 使用新的关系
             return jsonify({
                 'code': 404,
                 'msg': '未找到员工信息'
@@ -519,7 +519,7 @@ def create_leave_request():
                 
         # 创建请假记录
         leave = Leave(
-            employee_id=current_employee.id,
+            employee_id=current_user.employee.id,
             leave_type=data['leave_type'],
             start_date=start_date,
             end_date=end_date,
@@ -619,7 +619,12 @@ def get_overtime_records():
         
         # 权限控制：普通员工只能查看自己的记录
         if not current_user.is_admin:
-            query = query.filter_by(employee_id=current_user_id)
+            if not current_user.employee:
+                return jsonify({
+                    'code': 404,
+                    'msg': '未找到员工信息'
+                })
+            query = query.filter_by(employee_id=current_user.employee.id)
         elif employee_id:  # 管理员可以按员工ID筛选
             query = query.filter_by(employee_id=employee_id)
             
@@ -653,6 +658,14 @@ def create_overtime_request():
     """
     try:
         current_user_id = get_jwt_identity()
+        current_user = User.query.get(current_user_id)
+        
+        if not current_user or not current_user.employee:
+            return jsonify({
+                'code': 404,
+                'msg': '未找到员工信息'
+            })
+            
         data = request.get_json()
         
         # 验证必要字段
@@ -666,7 +679,7 @@ def create_overtime_request():
                 
         # 创建加班记录
         overtime = Overtime(
-            employee_id=current_user_id,
+            employee_id=current_user.employee.id,
             start_time=datetime.strptime(data['start_time'], '%Y-%m-%d %H:%M:%S'),
             end_time=datetime.strptime(data['end_time'], '%Y-%m-%d %H:%M:%S'),
             reason=data.get('reason', ''),
@@ -738,24 +751,55 @@ def approve_overtime_request(id):
         })
 
 # 考勤规则相关API
-@bp.route('/attendance-rules', methods=['GET'])
+@bp.route('/attendance/rules', methods=['GET'])
 @jwt_required()
 def get_attendance_rules():
-    """获取考勤规则列表"""
+    """获取考勤规则列表
+    
+    Returns:
+        JSON: 考勤规则列表数据
+    """
     try:
-        rules = AttendanceRule.query.all()
+        # 获取查询参数
+        department_id = request.args.get('department_id', type=int)
+        is_active = request.args.get('is_active', type=bool, default=True)
+        
+        # 构建查询
+        query = AttendanceRule.query
+        
+        # 添加部门筛选
+        if department_id:
+            query = query.filter_by(department_id=department_id)
+            
+        # 添加生效状态筛选
+        if is_active:
+            current_date = datetime.now().date()
+            query = query.filter(
+                db.and_(
+                    AttendanceRule.effective_start_date <= current_date,
+                    db.or_(
+                        AttendanceRule.effective_end_date >= current_date,
+                        AttendanceRule.effective_end_date.is_(None)
+                    )
+                )
+            )
+            
+        # 获取规则列表
+        rules = query.order_by(AttendanceRule.created_at.desc()).all()
+        
         return jsonify({
             'code': 200,
-            'data': [rule.to_dict() for rule in rules],
-            'msg': '获取考勤规则列表成功'
+            'message': '获取考勤规则列表成功',
+            'data': [rule.to_dict() for rule in rules]
         })
     except Exception as e:
         return jsonify({
             'code': 500,
-            'msg': f'获取考勤规则列表失败: {str(e)}'
+            'message': f'获取考勤规则列表失败: {str(e)}',
+            'data': None
         })
 
-@bp.route('/attendance-rules/<int:id>', methods=['GET'])
+@bp.route('/attendance/rules/<int:id>', methods=['GET'])
 @jwt_required()
 def get_attendance_rule(id):
     """获取单个考勤规则"""
@@ -777,7 +821,7 @@ def get_attendance_rule(id):
             'msg': f'获取考勤规则失败: {str(e)}'
         })
 
-@bp.route('/attendance-rules', methods=['POST'])
+@bp.route('/attendance/rules', methods=['POST'])
 @jwt_required()
 def create_attendance_rule():
     """创建考勤规则"""
@@ -834,7 +878,7 @@ def create_attendance_rule():
             'msg': f'创建考勤规则失败: {str(e)}'
         })
 
-@bp.route('/attendance-rules/<int:id>', methods=['PUT'])
+@bp.route('/attendance/rules/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_attendance_rule(id):
     """更新考勤规则"""
@@ -899,7 +943,7 @@ def update_attendance_rule(id):
             'msg': f'更新考勤规则失败: {str(e)}'
         })
 
-@bp.route('/attendance-rules/<int:id>', methods=['DELETE'])
+@bp.route('/attendance/rules/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_attendance_rule(id):
     """删除考勤规则"""
@@ -930,4 +974,36 @@ def delete_attendance_rule(id):
         return jsonify({
             'code': 500,
             'msg': f'删除考勤规则失败: {str(e)}'
+        })
+
+@bp.route('/attendance/locations', methods=['GET'])
+@jwt_required()
+def get_attendance_locations():
+    """获取打卡地点列表
+    
+    Returns:
+        JSON: 打卡地点列表数据
+    """
+    try:
+        # 获取当前用户
+        current_user_id = get_jwt_identity()
+        current_user = User.query.get(current_user_id)
+        if not current_user:
+            return jsonify({
+                'code': 401,
+                'msg': '用户未登录'
+            })
+            
+        # 获取有效的打卡地点
+        locations = AttendanceLocation.query.filter_by(is_active=True).all()
+        
+        return jsonify({
+            'code': 200,
+            'data': [location.to_dict() for location in locations],
+            'msg': '获取打卡地点列表成功'
+        })
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'msg': f'获取打卡地点列表失败: {str(e)}'
         })

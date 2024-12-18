@@ -15,6 +15,14 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
     
+    # 添加与员工的关联
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), comment='关联的员工ID')
+    employee = db.relationship(
+        'Employee',
+        foreign_keys=[employee_id],
+        back_populates='user_account'  # 使用更具体的名称
+    )
+    
     # 重置密码相关字段
     reset_code = db.Column(db.String(6), comment='重置密码验证码')
     reset_code_expires = db.Column(db.DateTime, comment='重置码过期时间')
@@ -44,8 +52,8 @@ class User(db.Model):
             'username': self.username,
             'email': self.email,
             'role': self.role,
-            'is_admin': self.is_admin,
             'is_active': self.is_active,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'employee_id': self.employee.id if self.employee else None,  
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
         }

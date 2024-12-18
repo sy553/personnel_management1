@@ -119,8 +119,8 @@ export const isLoggedIn = () => {
  * @returns {boolean} 返回是否有员工信息
  */
 export const hasEmployeeInfo = () => {
-  const userInfo = getUserInfo();
-  return !!(userInfo && userInfo.employeeId);
+  const user = getUserInfo();
+  return user && user.employee_id !== null;  // 使用新的employee_id字段
 };
 
 /**
@@ -128,6 +128,6 @@ export const hasEmployeeInfo = () => {
  * @returns {number|null} 返回员工ID，如果不存在则返回null
  */
 export const getEmployeeId = () => {
-  const userInfo = getUserInfo();
-  return userInfo ? userInfo.employeeId : null;
+  const user = getUserInfo();
+  return user ? user.employee_id : null;  // 使用新的employee_id字段
 };

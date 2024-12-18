@@ -42,3 +42,16 @@ def login_required(fn):
             return jsonify({"msg": "需要登录"}), 401
         return fn(*args, **kwargs)
     return decorator
+
+def get_current_user():
+    """获取当前登录用户
+    
+    Returns:
+        User: 当前登录的用户对象，如果未登录则返回None
+    """
+    try:
+        verify_jwt_in_request()
+        user_id = get_jwt_identity()
+        return User.query.get(user_id)
+    except:
+        return None

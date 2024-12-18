@@ -92,7 +92,8 @@ def create_app(config_name=None):
     from .api.user import bp as user_bp  
     from .api.intern import bp as intern_bp  
     from .api.statutory_holiday import bp as statutory_holiday_bp
-    from app.routes.attendance import attendance as attendance_rules_bp
+    from app.routes.leave import leave_bp
+    from app.routes.overtime import overtime_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(employee_bp)
@@ -104,8 +105,8 @@ def create_app(config_name=None):
     app.register_blueprint(user_bp)
     app.register_blueprint(intern_bp)
     app.register_blueprint(statutory_holiday_bp)
-    # 注册考勤规则蓝图，添加URL前缀
-    app.register_blueprint(attendance_rules_bp, url_prefix='/api/attendance')
+    app.register_blueprint(leave_bp, url_prefix='/api')
+    app.register_blueprint(overtime_bp, url_prefix='/api')
     
     # 配置日志
     if not app.debug and not app.testing:

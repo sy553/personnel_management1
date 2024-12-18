@@ -29,7 +29,12 @@ class Employee(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # 关系
-    user = db.relationship('User', backref=db.backref('employee', uselist=False))
+    user_account = db.relationship(
+        'User',
+        foreign_keys='User.employee_id',
+        back_populates='employee',
+        uselist=False
+    )
     department = db.relationship('Department', foreign_keys=[department_id], back_populates='employees')
     position = db.relationship('Position', foreign_keys=[position_id], back_populates='employees')
     education_history = db.relationship('EducationHistory', back_populates='employee', lazy='dynamic')
@@ -48,7 +53,7 @@ class Employee(db.Model):
         """转换为字典"""
         return {
             'id': self.id,
-            'user_id': self.user_id,
+            'user_id': self.user_account.id if self.user_account else None,  # 修改为user_account
             'employee_id': self.employee_id,
             'name': self.name,
             'gender': self.gender,
@@ -59,11 +64,11 @@ class Employee(db.Model):
             'address': self.address,
             'hire_date': self.hire_date.strftime('%Y-%m-%d') if self.hire_date else None,
             'resignation_date': self.resignation_date.strftime('%Y-%m-%d') if self.resignation_date else None,
-            'department_id': self.department_id,  # 添加部门ID
+            'department_id': self.department_id,
             'department': self.department.name if self.department else None,
-            'position_id': self.position_id,  # 添加职位ID
+            'position_id': self.position_id,
             'position': self.position.name if self.position else None,
-            'employee_type': self.employee_type,  # 添加员工类型到返回字典
+            'employee_type': self.employee_type,
             'employment_status': self.employment_status,
             'photo_url': self.photo_url,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
